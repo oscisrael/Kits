@@ -1,0 +1,83 @@
+{
+  "service_15000": {
+    "Macan": [
+      {"item": "Drain engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Change oil filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Underbody panels: visual inspection for completeness, secure installation and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Visual inspection for leaks from underneath (oils and other fluids)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyres: check condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake lines: visual inspection for damage, routing and corrosion", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake hoses: visual inspection for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Fill in engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Emergency call system (ERA-GLONASS, EVAK, ERA-RB): Check battery condition (Eurasian Customs Union only)", "type": "פעולה", "confidence": 0.98},
+      {"item": "Reset maintenance interval", "type": "פעולה", "confidence": 0.99}
+    ]
+  },
+  "service_30000": {
+    "Macan": [
+      {"item": "Windscreen wiper/washer system, headlight cleaning system: check function and nozzle settings", "type": "פעולה", "confidence": 0.99},
+      {"item": "Horn: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyres: check tyre pressure (TPM)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Diagnostic system: read out fault memory and transfer gear wear integrator; reset maintenance interval", "type": "פעולה", "confidence": 0.99},
+      {"item": "Emergency call system (ERA-GLONASS, EVAK, ERA-RB): Check battery condition (Eurasian Customs Union only)", "type": "פעולה", "confidence": 0.98},
+      {"item": "Particle filter: replace filter element", "type": "חלק", "confidence": 0.98},
+      {"item": "Check wiper blades", "type": "פעולה", "confidence": 0.90},
+      {"item": "All headlights: check adjustment", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyres and spare wheel: check condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake system: check brake pads and brake discs for wear (without removing wheels)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Radiators and air intakes: visual inspection for external contamination and blockage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Drain engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Visual inspection for leaks from underneath (oils and other fluids)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake lines: visual inspection for damage, routing and corrosion", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake hoses: visual inspection for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Drive shafts: visual inspection of the boots for leaks and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Cardan shaft: visual inspection of the rubber bellows for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Steering gear: visual inspection of the bellows for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tie rod joints: check play and dust bellows", "type": "פעולה", "confidence": 0.99},
+      {"item": "Fill in engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Change oil filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only", "type": "פעולה", "confidence": 0.85},
+      {"item": "Coolant: check level and antifreeze", "type": "פעולה", "confidence": 0.95},
+      {"item": "Check drive belt (only if vehicle is used for off-road driving)", "type": "פעולה", "confidence": 0.95},
+      {"item": "Remote control, front seats, electric parking brake and footbrake, engine, transmission, steering, ParkAssist, cruise control, PSM switch, heating, sports exhaust system, air conditioning and instruments: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Oils, fluids: visual inspection for leaks", "type": "פעולה", "confidence": 0.99}
+    ]
+  },
+  "service_45000": {
+    "Macan": [
+      {"item": "Replace spark plugs", "type": "חלק", "confidence": 0.98}
+    ]
+  },
+  "service_60000": {
+    "Macan": [
+      {"item": "Seat belts: check function and condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake system: check brake pads and brake discs for wear", "type": "פעולה", "confidence": 0.99},
+      {"item": "Trailer hitch: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Lubricate door arrester and fastening bolts", "type": "פעולה", "confidence": 0.99},
+      {"item": "Underbody panels: visual inspection for completeness, secure installation and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Axle joints: check the play and visually inspect the dust boots for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Exhaust system: Visual inspection for leaks and damage, check brackets", "type": "פעולה", "confidence": 0.99},
+      {"item": "PDK transmission: change clutch fluid (ATF) and filter", "type": "חלק", "confidence": 0.95},
+      {"item": "Visual inspection for leaks from above (oils and other fluids)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Fuel lines and connections: visual inspection", "type": "פעולה", "confidence": 0.99}
+    ]
+  },
+  "service_90000": {
+    "Macan": [
+      {"item": "All-wheel final drive: change oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Rear final drive: change oil", "type": "חלק", "confidence": 0.95}
+    ]
+  },
+  "service_120000": {
+    "Macan": [
+      {"item": "Air cleaner: replace filter element", "type": "חלק", "confidence": 0.98}
+    ]
+  },
+  "service_time_dependent": {
+    "Macan": [
+      {"item": "Change brake fluid (use only original Porsche brake fluid)", "type": "חלק", "confidence": 0.95},
+      {"item": "Prepare condition report for long-life guarantee", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyre sealing compound: check use-by date and replace if necessary", "type": "פעולה", "confidence": 0.85}
+    ]
+  }
+}

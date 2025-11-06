@@ -1,0 +1,152 @@
+{
+  "service_15000": {
+    "911 Carrera / GTS": [
+      {"item": "Drain engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Change oil filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Underbody panels: visual inspection for completeness, secure installation and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Visual inspection for leaks from underneath (oils and other fluids)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyres: check condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake lines: visual inspection for damage, routing and corrosion", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake hoses: visual inspection for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Fill in engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Reset maintenance interval", "type": "פעולה", "confidence": 0.99},
+      {"item": "Vehicles with Connect: Resetting Smart Service values for the replaced components", "type": "פעולה", "confidence": 0.99}
+    ]
+  },
+  "service_30000": {
+    "911 Carrera / S / T": [
+      {"item": "Windscreen wiper/washer system, headlight cleaning system: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Horn: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyres: check tyre pressure (TPM)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Diagnostic system: read out fault memory; reset maintenance interval", "type": "פעולה", "confidence": 0.99},
+      {"item": "Check actuator travel of brake shoes", "type": "פעולה", "confidence": 0.99},
+      {"item": "Vehicles with Connect: Resetting Smart Service values for the replaced components", "type": "פעולה", "confidence": 0.99},
+      {"item": "Particle filter: replace filter element", "type": "חלק", "confidence": 0.98},
+      {"item": "Check front lid lock and safety hook of the front lid to ensure that they are secure and function properly", "type": "פעולה", "confidence": 0.99},
+      {"item": "Replace air intake pre-filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only", "type": "פעולה", "confidence": 0.85},
+      {"item": "Check wiper blades", "type": "פעולה", "confidence": 0.90},
+      {"item": "All headlights: check adjustment", "type": "פעולה", "confidence": 0.99},
+      {"item": "Radiator and air intakes (including charge-air intakes under rear lid): visual inspection for external contamination and blockage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake system: check brake pads and brake discs for wear (without removing wheels)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Service and maintain convertible top", "type": "פעולה", "confidence": 0.99},
+      {"item": "Service and maintain sunroof", "type": "פעולה", "confidence": 0.99},
+      {"item": "Drain engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Tyres: check condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake lines: visual inspection for damage, routing and corrosion", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake hoses: visual inspection for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Drive shafts: visual inspection of the boots for leaks and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Manual transmission: change oil", "type": "חלק", "confidence": 0.95},
+      {"item": "PDK transmission: change transmission oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Change oil filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Fill in engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Coolant: check level and antifreeze", "type": "פעולה", "confidence": 0.95},
+      {"item": "Remote control, front seats, electric parking brake and foot brake (also actuation travel), engine, clutch, steering, transmission, ParkAssist, cruise control, PSM switch, PASM switch, Sport switch, mode-switch, lift-switch, sports exhaust system, door mirror fold-in function, heating, air conditioning and instruments: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Oils, fluids: visual inspection for leaks", "type": "פעולה", "confidence": 0.99}
+    ],
+    "GTS": [
+      {"item": "Windscreen wiper/washer system, headlight cleaning system: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Horn: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyres: check tyre pressure (TPM)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Diagnostic system: read out fault memory; reset maintenance interval", "type": "פעולה", "confidence": 0.99},
+      {"item": "Check actuator travel of brake shoes", "type": "פעולה", "confidence": 0.99},
+      {"item": "Vehicles with Connect: Resetting Smart Service values for the replaced components", "type": "פעולה", "confidence": 0.99},
+      {"item": "Particle filter: replace filter element", "type": "חלק", "confidence": 0.98},
+      {"item": "12V battery vent hose: Checking condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Check front lid lock and safety hook of the front lid to ensure that they are secure and function properly", "type": "פעולה", "confidence": 0.99},
+      {"item": "Replace air intake pre-filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only", "type": "פעולה", "confidence": 0.85},
+      {"item": "Warning sticker: Check for presence and replace missing stickers (only warning stickers in visible area)", "type": "פעולה", "confidence": 0.80},
+      {"item": "Visual inspection: Service Disconnect (high-voltage system maintenance connector) for soiling and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Check wiper blades", "type": "פעולה", "confidence": 0.90},
+      {"item": "All headlights: check adjustment", "type": "פעולה", "confidence": 0.99},
+      {"item": "Radiator and air intakes (including charge-air intakes under rear lid): visual inspection for external contamination and blockage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake system: check brake pads and brake discs for wear (without removing wheels)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Service and maintain convertible top", "type": "פעולה", "confidence": 0.99},
+      {"item": "Service and maintain sunroof", "type": "פעולה", "confidence": 0.99},
+      {"item": "Service and maintain Targa roof", "type": "פעולה", "confidence": 0.99},
+      {"item": "Drain engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Change oil filter", "type": "חלק", "confidence": 0.98},
+      {"item": "Tyres: check condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake lines: visual inspection for damage, routing and corrosion", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake hoses: visual inspection for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Drive shafts: visual inspection of the boots for leaks and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "All-wheel final drive: change oil", "type": "חלק", "confidence": 0.95},
+      {"item": "PDK transmission: change transmission oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Fill in engine oil", "type": "חלק", "confidence": 0.95},
+      {"item": "Coolant: check level and antifreeze", "type": "פעולה", "confidence": 0.95},
+      {"item": "Remote control, front seats, electric parking brake and foot brake (also actuation travel), engine, clutch, steering, transmission, ParkAssist, cruise control, PSM switch, PASM switch, Sport switch, mode-switch, lift-switch, sports exhaust system, door mirror fold-in function, heating, air conditioning and instruments: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Oils, fluids: visual inspection for leaks", "type": "פעולה", "confidence": 0.99}
+    ]
+  },
+  "service_45000": {
+    "911 Carrera / S / T": [
+      {"item": "Replace spark plugs", "type": "חלק", "confidence": 0.98}
+    ],
+    "GTS": [
+      {"item": "Replace spark plugs", "type": "חלק", "confidence": 0.98}
+    ]
+  },
+  "service_60000": {
+    "911 Carrera / S / T": [
+      {"item": "Seat belts: check function and condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Door locks: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake system: check brake pads and brake discs for wear", "type": "פעולה", "confidence": 0.99},
+      {"item": "Air cleaner: replace filter elements", "type": "חלק", "confidence": 0.98},
+      {"item": "Underbody panels: visual inspection for completeness, secure installation and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Visual inspection for leaks from underneath (oils and other fluids)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Steering gear: visual inspection of the bellows for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tie rod joints: check play and dust bellows", "type": "פעולה", "confidence": 0.99},
+      {"item": "Axle joints: visually inspect the dust boots for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Exhaust system: Visual inspection for leaks and damage, check brackets", "type": "פעולה", "confidence": 0.99},
+      {"item": "Check drive belt", "type": "פעולה", "confidence": 0.95},
+      {"item": "Fuel lines and connections: visual inspection", "type": "פעולה", "confidence": 0.99}
+    ],
+    "GTS": [
+      {"item": "Seat belts: check function and condition", "type": "פעולה", "confidence": 0.99},
+      {"item": "Door locks: check function", "type": "פעולה", "confidence": 0.99},
+      {"item": "Brake system: check brake pads and brake discs for wear", "type": "פעולה", "confidence": 0.99},
+      {"item": "Underbody panels: visual inspection for completeness, secure installation and damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Visual inspection for leaks from underneath (oils and other fluids)", "type": "פעולה", "confidence": 0.99},
+      {"item": "Steering gear: visual inspection of the bellows for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tie rod joints: check play and dust bellows", "type": "פעולה", "confidence": 0.99},
+      {"item": "Axle joints: visually inspect the dust boots for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "Rear-axle steering: check bellows, dust boots and play on joints", "type": "פעולה", "confidence": 0.99},
+      {"item": "Exhaust system: Visual inspection for leaks and damage, check brackets", "type": "פעולה", "confidence": 0.99},
+      {"item": "Fuel lines and connections: visual inspection", "type": "פעולה", "confidence": 0.99},
+      {"item": "Air cleaner: replace filter elements", "type": "חלק", "confidence": 0.98}
+    ]
+  },
+  "service_90000": {
+    "GTS": [
+      {"item": "Check that the threaded connections of the drive shafts on the front axle are secure", "type": "פעולה", "confidence": 0.99},
+      {"item": "Controlled all-wheel drive: change oil", "type": "חלק", "confidence": 0.95},
+      {"item": "PDK transmission: change clutch fluid (ATF)", "type": "חלק", "confidence": 0.95}
+    ],
+    "911 Carrera / S / T": [
+      {"item": "PDK transmission: change clutch fluid (ATF)", "type": "חלק", "confidence": 0.95},
+      {"item": "Replace drive belt", "type": "חלק", "confidence": 0.98}
+    ]
+  },
+  "service_120000": {
+    "911 Carrera / S / T": [
+      {"item": "Ancillary unit mounts and chassis: visual inspection of all rubber mounts for damage", "type": "פעולה", "confidence": 0.99}
+    ],
+    "GTS": [
+      {"item": "Ancillary unit mounts and chassis: visual inspection of all rubber mounts for damage", "type": "פעולה", "confidence": 0.99},
+      {"item": "PDCC: Replacing filter insert in rear-axle valve block", "type": "חלק", "confidence": 0.98}
+    ]
+  },
+  "service_time_dependent": {
+    "911 Carrera / S / T": [
+      {"item": "Change brake fluid (use only original Porsche brake fluid)", "type": "חלק", "confidence": 0.95},
+      {"item": "Prepare condition report for long-life guarantee", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyre sealing compound: check use-by date and replace if necessary", "type": "פעולה", "confidence": 0.85}
+    ],
+    "GTS": [
+      {"item": "Change brake fluid (use only original Porsche brake fluid)", "type": "חלק", "confidence": 0.95},
+      {"item": "Prepare condition report for long-life guarantee", "type": "פעולה", "confidence": 0.99},
+      {"item": "Tyre sealing compound: check use-by date and replace if necessary", "type": "פעולה", "confidence": 0.85}
+    ]
+  }
+}

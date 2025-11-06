@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual env
+.venv/
+
+# IDE
+.idea/
+
+# Outputs / Logs
+*.log
+*.ymal
+*.zip
+# OS
+*.pdf
+*.json

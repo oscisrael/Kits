@@ -1,0 +1,32 @@
+[
+  {
+    "text": "Underbody panels: visual inspection for completeness, secure installation and damage",
+    "category": "INSPECTION",
+    "confidence": 100
+  },
+  {
+    "text": "Tyres: check condition",
+    "category": "INSPECTION",
+    "confidence": 100
+  },
+  {
+    "text": "Brake hoses: visual inspection for damage",
+    "category": "INSPECTION",
+    "confidence": 100
+  },
+  {
+    "text": "Reset maintenance interval",
+    "category": "INSPECTION",
+    "confidence": 100
+  },
+  {
+    "text": "Visual inspection for leaks from underneath (oils and other fluids)",
+    "category": "INSPECTION",
+    "confidence": 66
+  },
+  {
+    "text": "Brake lines: visual inspection for damage, routing and corrosion",
+    "category": "INSPECTION",
+    "confidence": 66
+  }
+]

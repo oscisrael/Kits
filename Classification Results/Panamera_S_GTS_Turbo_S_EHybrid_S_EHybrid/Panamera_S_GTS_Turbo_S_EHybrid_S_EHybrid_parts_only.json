@@ -1,0 +1,127 @@
+[
+  {
+    "text": "Drain engine oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Change oil filter",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Fill in engine oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Particle filter: replace filter element",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Battery vent hose: check condition",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Radiators and air intakes: visual inspection for external contamination and blockage",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Drain engine oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "All-wheel final drive: change oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Rear final drive: change oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Change oil filter",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Fill in engine oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Replace spark plugs",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Brake system: check brake pads and brake discs for wear",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Tie rod joints: check play and dust bellows",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Axle joints: check the play and visually inspect the dust boots for damage",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "PDK transmission: change oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Air cleaner: replace filter element",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Change brake fluid (use only original Porsche brake fluid)",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "In vehicles from model year 2022 with Connect Release 3.1: Reset the Smart Service values for the replaced components",
+    "category": "PARTS",
+    "confidence": 66
+  },
+  {
+    "text": "Check actuator travel of brake shoes",
+    "category": "PARTS",
+    "confidence": 66
+  },
+  {
+    "text": "In vehicles from model year 2022 with Connect Release 3.1: Reset the Smart Service values for the replaced components",
+    "category": "PARTS",
+    "confidence": 66
+  },
+  {
+    "text": "Check wiper blades",
+    "category": "PARTS",
+    "confidence": 66
+  },
+  {
+    "text": "Brake system: check brake pads and brake discs for wear (without removing wheels)",
+    "category": "PARTS",
+    "confidence": 66
+  },
+  {
+    "text": "Trailer hitch: check function",
+    "category": "PARTS",
+    "confidence": 66
+  },
+  {
+    "text": "Steering gear: visual inspection of the bellows for damage",
+    "category": "PARTS",
+    "confidence": 66
+  }
+]

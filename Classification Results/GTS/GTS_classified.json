@@ -1,0 +1,332 @@
+{
+  "metadata": {
+    "timestamp": "2025-11-02T08:50:23.416228",
+    "source_file": "911_service_mapping.json",
+    "model_variant": "GTS",
+    "classifier": "ollama-llama3.2",
+    "total_items": 53,
+    "parts_count": 27,
+    "inspection_count": 26
+  },
+  "services": {
+    "service_30000": {
+      "items": [
+        {
+          "text": "Windscreen wiper/washer system, headlight cleaning system: check function",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Horn: check function",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Tyres: check tyre pressure (TPM)",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Diagnostic system: read out fault memory; reset maintenance interval",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Check actuator travel of brake shoes",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Vehicles with Connect: Resetting Smart Service values for the replaced components",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Particle filter: replace filter element",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "12V battery vent hose: Checking condition",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Check front lid lock and safety hook of the front lid to ensure that they are secure and function properly",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Replace air intake pre-filter",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Warning sticker: Check for presence and replace missing stickers (only warning stickers in visible area)",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Visual inspection: Service Disconnect (high-voltage system maintenance connector) for soiling and damage",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Check wiper blades",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "All headlights: check adjustment",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Radiator and air intakes (including charge-air intakes under rear lid): visual inspection for external contamination and blockage",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Brake system: check brake pads and brake discs for wear (without removing wheels)",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Service and maintain convertible top",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Service and maintain sunroof",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Service and maintain Targa roof",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Drain engine oil",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Change oil filter",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Tyres: check condition",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Brake lines: visual inspection for damage, routing and corrosion",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Brake hoses: visual inspection for damage",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Drive shafts: visual inspection of the boots for leaks and damage",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "All-wheel final drive: change oil",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "PDK transmission: change transmission oil",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Fill in engine oil",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Coolant: check level and antifreeze",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Remote control, front seats, electric parking brake and foot brake (also actuation travel), engine, clutch, steering, transmission, ParkAssist, cruise control, PSM switch, PASM switch, Sport switch, mode-switch, lift-switch, sports exhaust system, door mirror fold-in function, heating, air conditioning and instruments: check function",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Oils, fluids: visual inspection for leaks",
+          "category": "INSPECTION",
+          "confidence": 100
+        }
+      ],
+      "summary": {
+        "total": 32,
+        "parts": 17,
+        "inspection": 15
+      }
+    },
+    "service_45000": {
+      "items": [
+        {
+          "text": "Replace spark plugs",
+          "category": "PARTS",
+          "confidence": 100
+        }
+      ],
+      "summary": {
+        "total": 1,
+        "parts": 1,
+        "inspection": 0
+      }
+    },
+    "service_60000": {
+      "items": [
+        {
+          "text": "Seat belts: check function and condition",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Door locks: check function",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Brake system: check brake pads and brake discs for wear",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Underbody panels: visual inspection for completeness, secure installation and damage",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Visual inspection for leaks from underneath (oils and other fluids)",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Steering gear: visual inspection of the bellows for damage",
+          "category": "PARTS",
+          "confidence": 66
+        },
+        {
+          "text": "Tie rod joints: check play and dust bellows",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Axle joints: visually inspect the dust boots for damage",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Rear-axle steering: check bellows, dust boots and play on joints",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Exhaust system: Visual inspection for leaks and damage, check brackets",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Fuel lines and connections: visual inspection",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Air cleaner: replace filter elements",
+          "category": "PARTS",
+          "confidence": 100
+        }
+      ],
+      "summary": {
+        "total": 12,
+        "parts": 5,
+        "inspection": 7
+      }
+    },
+    "service_90000": {
+      "items": [
+        {
+          "text": "Check that the threaded connections of the drive shafts on the front axle are secure",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "Controlled all-wheel drive: change oil",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "PDK transmission: change clutch fluid (ATF)",
+          "category": "PARTS",
+          "confidence": 100
+        }
+      ],
+      "summary": {
+        "total": 3,
+        "parts": 2,
+        "inspection": 1
+      }
+    },
+    "service_120000": {
+      "items": [
+        {
+          "text": "Ancillary unit mounts and chassis: visual inspection of all rubber mounts for damage",
+          "category": "INSPECTION",
+          "confidence": 66
+        },
+        {
+          "text": "PDCC: Replacing filter insert in rear-axle valve block",
+          "category": "PARTS",
+          "confidence": 100
+        }
+      ],
+      "summary": {
+        "total": 2,
+        "parts": 1,
+        "inspection": 1
+      }
+    },
+    "service_time_dependent": {
+      "items": [
+        {
+          "text": "Change brake fluid (use only original Porsche brake fluid)",
+          "category": "PARTS",
+          "confidence": 100
+        },
+        {
+          "text": "Prepare condition report for long-life guarantee",
+          "category": "INSPECTION",
+          "confidence": 100
+        },
+        {
+          "text": "Tyre sealing compound: check use-by date and replace if necessary",
+          "category": "INSPECTION",
+          "confidence": 100
+        }
+      ],
+      "summary": {
+        "total": 3,
+        "parts": 1,
+        "inspection": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "service_30000": [
+    "Windscreen wiper/washer system, headlight cleaning system: check function",
+    "Horn: check function",
+    "Tyres: check tyre pressure (TPM)",
+    "Diagnostic system: read out fault memory; reset maintenance interval",
+    "Check actuator travel of brake shoes",
+    "Emergency call system (ERA-GLONASS, EVAK, ERA-RB): Check battery condition (Eurasian Customs Union only)",
+    "In vehicles from model year 2022 with Connect Release 3.1: Reset the Smart Service values for the replaced components",
+    "Particle filter: replace filter element",
+    "Check wiper blades",
+    "All headlights: check adjustment",
+    "Battery vent hose: check condition",
+    "Tyres and spare wheel: check condition",
+    "Radiators and air intakes: visual inspection for external contamination and blockage",
+    "Brake system: check brake pads and brake discs for wear (without removing wheels)",
+    "Drain engine oil",
+    "Brake lines: visual inspection for damage, routing and corrosion",
+    "Brake hoses: visual inspection for damage",
+    "Drive shafts: visual inspection of the boots for leaks and damage",
+    "Change oil filter",
+    "Fill in engine oil",
+    "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only",
+    "Coolant: check level and antifreeze",
+    "Remote control, front seats, electric parking and foot brakes (also actuation travel), engine, clutch, steering, transmission, ParkAssist, cruise control, PSM switch, heating, sports exhaust system, air conditioning and instruments: check function",
+    "Oils, fluids: visual inspection for leaks"
+  ],
+  "service_45000": [
+    "In vehicles from model year 2022 with Connect Release 3.1: Reset the Smart Service values for the replaced components",
+    "Replace spark plugs"
+  ],
+  "service_60000": [
+    "Seat belts: check function and condition",
+    "Brake system: check brake pads and brake discs for wear",
+    "Trailer hitch: check function",
+    "Underbody panels: visual inspection for completeness, secure installation and damage",
+    "Visual inspection for leaks from underneath (oils and other fluids)",
+    "Steering gear: visual inspection of the bellows for damage",
+    "Tie rod joints: check play and dust bellows",
+    "Axle joints: check the play and visually inspect the dust boots for damage",
+    "Exhaust system: Visual inspection for leaks and damage, check brackets",
+    "Fuel lines and connections: visual inspection"
+  ],
+  "service_90000": [
+    "PDK transmission: change oil"
+  ],
+  "service_120000": [
+    "Air cleaner: replace filter element"
+  ],
+  "service_180000": [
+    "All-wheel final drive: change oil",
+    "Rear final drive: change oil"
+  ],
+  "service_time_dependent": [
+    "In vehicles from model year 2022 with Connect Release 3.1: Reset the Smart Service values for the replaced components",
+    "Change brake fluid (use only original Porsche brake fluid)",
+    "Prepare condition report for long-life guarantee",
+    "Tyre sealing compound: check use-by date and replace if necessary"
+  ]
+}

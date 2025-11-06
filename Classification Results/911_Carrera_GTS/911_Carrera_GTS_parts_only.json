@@ -1,0 +1,22 @@
+[
+  {
+    "text": "Drain engine oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Change oil filter",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Fill in engine oil",
+    "category": "PARTS",
+    "confidence": 100
+  },
+  {
+    "text": "Vehicles with Connect: Resetting Smart Service values for the replaced components",
+    "category": "PARTS",
+    "confidence": 66
+  }
+]

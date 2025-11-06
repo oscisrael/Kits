@@ -1,0 +1,158 @@
+{
+  "service_15000": {
+    "911 Carrera / GTS": [
+      "Drain engine oil",
+      "Change oil filter",
+      "Underbody panels: visual inspection for completeness, secure installation and damage",
+      "Visual inspection for leaks from underneath (oils and other fluids)",
+      "Tyres: check condition",
+      "Brake lines: visual inspection for damage, routing and corrosion",
+      "Brake hoses: visual inspection for damage",
+      "Fill in engine oil",
+      "Reset maintenance interval",
+      "Vehicles with Connect: Resetting Smart Service values for the replaced components"
+    ]
+  },
+  "service_30000": {
+    "911 Carrera / S / T": [
+      "Windscreen wiper/washer system, headlight cleaning system: check function",
+      "Horn: check function",
+      "Tyres: check tyre pressure (TPM)",
+      "Diagnostic system: read out fault memory; reset maintenance interval",
+      "Check actuator travel of brake shoes",
+      "Vehicles with Connect: Resetting Smart Service values for the replaced components",
+      "Particle filter: replace filter element",
+      "Check front lid lock and safety hook of the front lid to ensure that they are secure and function properly",
+      "Replace air intake pre-filter",
+      "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only",
+      "Check wiper blades",
+      "All headlights: check adjustment",
+      "Radiator and air intakes (including charge-air intakes under rear lid): visual inspection for external contamination and blockage",
+      "Brake system: check brake pads and brake discs for wear (without removing wheels)",
+      "Service and maintain convertible top",
+      "Service and maintain sunroof",
+      "Drain engine oil",
+      "Tyres: check condition",
+      "Brake lines: visual inspection for damage, routing and corrosion",
+      "Brake hoses: visual inspection for damage",
+      "Drive shafts: visual inspection of the boots for leaks and damage",
+      "Change oil filter",
+      "Fill in engine oil",
+      "Coolant: check level and antifreeze",
+      "Remote control, front seats, electric parking brake and foot brake (also actuation travel), engine, clutch, steering, transmission, ParkAssist, cruise control, PSM switch, PASM switch, Sport switch, mode-switch, lift-switch, sports exhaust system, door mirror fold-in function, heating, air conditioning and instruments: check function",
+      "Oils, fluids: visual inspection for leaks"
+    ],
+    "GTS": [
+      "Windscreen wiper/washer system, headlight cleaning system: check function",
+      "Horn: check function",
+      "Tyres: check tyre pressure (TPM)",
+      "Diagnostic system: read out fault memory; reset maintenance interval",
+      "Check actuator travel of brake shoes",
+      "Vehicles with Connect: Resetting Smart Service values for the replaced components",
+      "Particle filter: replace filter element",
+      "12V battery vent hose: Checking condition",
+      "Check front lid lock and safety hook of the front lid to ensure that they are secure and function properly",
+      "Replace air intake pre-filter",
+      "Windscreen wiper/washer system: check fluid level; check window cleaner and antifreeze, depending on the season, use Porsche approved windscreen cleaner only",
+      "Warning sticker: Check for presence and replace missing stickers (only warning stickers in visible area)",
+      "Visual inspection: Service Disconnect (high-voltage system maintenance connector) for soiling and damage",
+      "Check wiper blades",
+      "All headlights: check adjustment",
+      "Radiator and air intakes (including charge-air intakes under rear lid): visual inspection for external contamination and blockage",
+      "Brake system: check brake pads and brake discs for wear (without removing wheels)",
+      "Service and maintain convertible top",
+      "Service and maintain sunroof",
+      "Service and maintain Targa roof",
+      "Drain engine oil",
+      "Change oil filter",
+      "Tyres: check condition",
+      "Brake lines: visual inspection for damage, routing and corrosion",
+      "Brake hoses: visual inspection for damage",
+      "Drive shafts: visual inspection of the boots for leaks and damage",
+      "Fill in engine oil",
+      "Coolant: check level and antifreeze",
+      "Remote control, front seats, electric parking brake and foot brake (also actuation travel), engine, clutch, steering, transmission, ParkAssist, cruise control, PSM switch, PASM switch, Sport switch, mode-switch, lift-switch, sports exhaust system, door mirror fold-in function, heating, air conditioning and instruments: check function",
+      "Oils, fluids: visual inspection for leaks"
+    ]
+  },
+  "service_45000": {
+    "911 Carrera / S / T": [
+      "Replace spark plugs"
+    ],
+    "GTS": [
+      "Replace spark plugs"
+    ]
+  },
+  "service_60000": {
+    "911 Carrera / S / T": [
+      "Seat belts: check function and condition",
+      "Door locks: check function",
+      "Brake system: check brake pads and brake discs for wear",
+      "Air cleaner: replace filter elements",
+      "Underbody panels: visual inspection for completeness, secure installation and damage",
+      "Visual inspection for leaks from underneath (oils and other fluids)",
+      "Steering gear: visual inspection of the bellows for damage",
+      "Tie rod joints: check play and dust bellows",
+      "Axle joints: visually inspect the dust boots for damage",
+      "Exhaust system: Visual inspection for leaks and damage, check brackets",
+      "Check drive belt",
+      "Fuel lines and connections: visual inspection"
+    ],
+    "GTS": [
+      "Seat belts: check function and condition",
+      "Door locks: check function",
+      "Brake system: check brake pads and brake discs for wear",
+      "Underbody panels: visual inspection for completeness, secure installation and damage",
+      "Visual inspection for leaks from underneath (oils and other fluids)",
+      "Steering gear: visual inspection of the bellows for damage",
+      "Tie rod joints: check play and dust bellows",
+      "Axle joints: visually inspect the dust boots for damage",
+      "Rear-axle steering: check bellows, dust boots and play on joints",
+      "Exhaust system: Visual inspection for leaks and damage, check brackets",
+      "Fuel lines and connections: visual inspection",
+      "Air cleaner: replace filter elements"
+    ]
+  },
+  "service_90000": {
+    "GTS": [
+      "Check that the threaded connections of the drive shafts on the front axle are secure",
+      "Controlled all-wheel drive: change oil",
+      "PDK transmission: change clutch fluid (ATF)"
+    ],
+    "911 Carrera / S / T": [
+      "PDK transmission: change clutch fluid (ATF)",
+      "Replace drive belt"
+    ]
+  },
+  "service_120000": {
+    "911 Carrera / S / T": [
+      "Ancillary unit mounts and chassis: visual inspection of all rubber mounts for damage"
+    ],
+    "GTS": [
+      "Ancillary unit mounts and chassis: visual inspection of all rubber mounts for damage",
+      "PDCC: Replacing filter insert in rear-axle valve block"
+    ]
+  },
+  "service_180000": {
+    "GTS": [
+      "All-wheel final drive: change oil",
+      "PDK transmission: change transmission oil"
+    ],
+    "911 Carrera / S / T": [
+      "Manual transmission: change oil",
+      "PDK transmission: change transmission oil"
+    ]
+  },
+  "service_time_dependent": {
+    "911 Carrera / S / T": [
+      "Change brake fluid (use only original Porsche brake fluid)",
+      "Prepare condition report for long-life guarantee",
+      "Tyre sealing compound: check use-by date and replace if necessary"
+    ],
+    "GTS": [
+      "Change brake fluid (use only original Porsche brake fluid)",
+      "Prepare condition report for long-life guarantee",
+      "Tyre sealing compound: check use-by date and replace if necessary"
+    ]
+  }
+}
