@@ -1,176 +1,163 @@
 import pdfplumber
 import json
+import re
 
 
-def extract_pdf_to_dicts(pdf_path, output_json_path=None):
+def extract_with_accurate_columns(pdf_path, output_json_path=None):
     """
-    המרת טבלה מ-PDF לרשימת מילונים.
-    Part Number = המזהה (לא ריק = שורה חדשה)
-    כל Part Number עם או בלי Remark, Qty, Model
+    חילוץ מדויק עם גבולות עמודות מדויקים - ללא OCR!
     """
 
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            table = page.extract_table()
+        page = pdf.pages[0]
 
-            if table is None or len(table) < 2:
+        # חלץ מילים (טקסט ישיר מה-PDF, לא OCR!)
+        words = page.extract_words(x_tolerance=3, y_tolerance=3)
+
+        # קבץ לפי Y
+        rows = {}
+        for word in words:
+            y = round(word['top'])
+            if y not in rows:
+                rows[y] = []
+            rows[y].append(word)
+
+        # מיין
+        for y in rows:
+            rows[y] = sorted(rows[y], key=lambda w: w['x0'])
+
+        sorted_rows = sorted(rows.items(), key=lambda r: r[0])
+
+        # מצא header
+        header_idx = None
+        for i, (y, row_words) in enumerate(sorted_rows):
+            text = " ".join([w['text'] for w in row_words])
+            if "Ill-No." in text and "Pos" in text:
+                header_idx = i
+                break
+
+        print(f"Header נמצא בשורה {header_idx}")
+
+        # עבור על שורות הנתונים
+        result_list = []
+        current_row = None
+
+        for i in range(header_idx + 1, len(sorted_rows)):
+            y, row_words = sorted_rows[i]
+
+            if not row_words:
                 continue
 
-            data_row = table[1]
+            # בדוק אם זו שורה חדשה (מתחילה עם Ill-No. ב-X=23)
+            first_word = row_words[0]
+            is_new_row = (first_word['x0'] < 30 and
+                          re.match(r'^\d{3}-\d{3}$', first_word['text']))
 
-            # פרוק את הנתונים לפי \n
-            ill_no_items = data_row[0].split('\n')
-            pos_items = data_row[1].split('\n')
-            part_number_items = data_row[2].split('\n')
-            description_items = data_row[3].split('\n')
-            remark_items = data_row[4].split('\n')
-            qty_items = data_row[5].split('\n')
-            model_items = data_row[6].split('\n')
+            if is_new_row:
+                # שמור שורה קודמת
+                if current_row:
+                    result_list.append(current_row)
 
-            result_list = []
+                # פרוק שורה חדשה
+                current_row = parse_row_accurate(row_words)
+            else:
+                # זו continuation
+                if current_row:
+                    # צרף לפי X
+                    for word in row_words:
+                        x = word['x0']
+                        text = word['text']
 
-            # מונה לכל עמודה
-            ill_no_idx = 0
-            pos_idx = 0
-            description_idx = 0
-            remark_idx = 0
-            qty_idx = 0
-            model_idx = 0
+                        if x < 85:  # Ill-No. - לא צריך
+                            pass
+                        elif x < 130:  # Pos - לא צריך
+                            pass
+                        elif x < 210:  # Part Number - לא צריך
+                            pass
+                        elif x < 380:  # Description
+                            if current_row["Description"]:
+                                current_row["Description"] += " " + text
+                            else:
+                                current_row["Description"] = text
+                        elif x < 465:  # Remark
+                            if current_row["Remark"]:
+                                current_row["Remark"] += " " + text
+                            else:
+                                current_row["Remark"] = text
+                        elif x < 510:  # Qty - לא צריך
+                            pass
+                        else:  # Model
+                            if current_row["Model"]:
+                                current_row["Model"] += " " + text
+                            else:
+                                current_row["Model"] = text
 
-            # עבור על כל Part Number (המזהה הראשי)
-            for pn_idx, part_number in enumerate(part_number_items):
-                part_number = part_number.strip()
+        # שמור שורה אחרונה
+        if current_row:
+            result_list.append(current_row)
 
-                # אם Part Number ריק - זו continuation, דלג
-                if not part_number:
-                    # עדיין צרוך Description ו-Remark אם יש
-                    if description_idx < len(description_items):
-                        desc = description_items[description_idx].strip()
-                        if desc:
-                            description_idx += 1
+        # שמור
+        if output_json_path:
+            with open(output_json_path, 'w', encoding='utf-8') as f:
+                json.dump(result_list, f, ensure_ascii=False, indent=2)
+            print(f"\n✓ נשמר ל: {output_json_path}")
 
-                    if remark_idx < len(remark_items):
-                        rem = remark_items[remark_idx].strip()
-                        if rem:
-                            remark_idx += 1
-                    continue
-
-                # זו שורה חדשה - קח ערכים
-                ill_no = ""
-                pos = ""
-                qty = ""
-                model = ""
-
-                # קח את הערכים הבאים מכל עמודה
-                if ill_no_idx < len(ill_no_items):
-                    ill_no = ill_no_items[ill_no_idx].strip()
-                    ill_no_idx += 1
-
-                if pos_idx < len(pos_items):
-                    pos = pos_items[pos_idx].strip()
-                    pos_idx += 1
-
-                if qty_idx < len(qty_items):
-                    qty = qty_items[qty_idx].strip()
-                    qty_idx += 1
-
-                if model_idx < len(model_items):
-                    model = model_items[model_idx].strip()
-                    model_idx += 1
-
-                # צבור Description ו-Remark עד שנגיע ל-Part Number הבא
-                description_parts = []
-                remark_parts = []
-
-                # קח את ה-Description ו-Remark הנוכחיים
-                if description_idx < len(description_items):
-                    desc = description_items[description_idx].strip()
-                    if desc:
-                        description_parts.append(desc)
-                    description_idx += 1
-
-                if remark_idx < len(remark_items):
-                    rem = remark_items[remark_idx].strip()
-                    if rem:
-                        remark_parts.append(rem)
-                    remark_idx += 1
-
-                # בדוק את ה-Part Numbers הבאים - אם הם ריקים, צרוך עוד Description ו-Remark
-                next_pn_idx = pn_idx + 1
-                while next_pn_idx < len(part_number_items):
-                    next_pn = part_number_items[next_pn_idx].strip()
-
-                    if next_pn:  # Part Number חדש - עצור
-                        break
-
-                    # Part Number ריק - צרוך עוד Description ו-Remark
-                    if description_idx < len(description_items):
-                        desc = description_items[description_idx].strip()
-                        if desc:
-                            description_parts.append(desc)
-                        description_idx += 1
-
-                    if remark_idx < len(remark_items):
-                        rem = remark_items[remark_idx].strip()
-                        if rem:
-                            remark_parts.append(rem)
-                        remark_idx += 1
-
-                    next_pn_idx += 1
-
-                # בנה את המילון
-                row_dict = {
-                    "Ill-No.": ill_no,
-                    "Pos": parse_pos(pos),
-                    "Part Number": part_number,
-                    "Description": " ".join(description_parts),
-                    "Remark": " ".join(remark_parts),
-                    "Qty": parse_qty(qty),
-                    "Model": model
-                }
-                result_list.append(row_dict)
-
-            # הדפסה לקונסול
-            print("[")
-            for idx, row in enumerate(result_list):
-                print(f"  {json.dumps(row, ensure_ascii=False)}" + ("," if idx < len(result_list) - 1 else ""))
-            print("]")
-
-            # שמירה לקובץ JSON
-            if output_json_path:
-                with open(output_json_path, 'w', encoding='utf-8') as f:
-                    json.dump(result_list, f, ensure_ascii=False, indent=2)
-                print(f"\n✓ הקובץ נשמר בהצלחה ל: {output_json_path}")
-
-            print(f"\n✓ סך הכל {len(result_list)} שורות חולצו בהצלחה!")
-            return result_list
+        print(f"✓ חולצו {len(result_list)} שורות")
+        return result_list
 
 
-def parse_pos(pos_str):
-    """המרת Pos למספר"""
-    if not pos_str:
-        return None
-    pos_str = pos_str.replace("(", "").replace(")", "").strip()
-    try:
-        return int(pos_str)
-    except ValueError:
-        return None
+def parse_row_accurate(row_words):
+    """
+    פרוק שורה עם גבולות מדויקים
+    """
+    row_dict = {
+        "Ill-No.": "",
+        "Pos": "",
+        "Part Number": "",
+        "Description": "",
+        "Remark": "",
+        "Qty": "",
+        "Model": ""
+    }
+
+    for word in row_words:
+        x = word['x0']
+        text = word['text']
+
+        # זהה לפי X
+        if x < 85:  # Ill-No.
+            row_dict["Ill-No."] += text + " "
+        elif x < 130:  # Pos
+            row_dict["Pos"] += text + " "
+        elif x < 210:  # Part Number (6 מילים)
+            row_dict["Part Number"] += text + " "
+        elif x < 380:  # Description
+            row_dict["Description"] += text + " "
+        elif x < 465:  # Remark
+            row_dict["Remark"] += text + " "
+        elif x < 510:  # Qty
+            row_dict["Qty"] += text + " "
+        else:  # Model
+            row_dict["Model"] += text + " "
+
+    # נקה רווחים
+    for key in row_dict:
+        row_dict[key] = row_dict[key].strip()
+
+    # נקה Pos מסוגריים
+    if row_dict["Pos"]:
+        row_dict["Pos"] = row_dict["Pos"].replace("(", "").replace(")", "")
+
+    return row_dict
 
 
-def parse_qty(qty_str):
-    """המרת Qty למספר"""
-    if not qty_str:
-        return None
-    qty_str = qty_str.strip()
-    try:
-        return int(qty_str)
-    except ValueError:
-        return qty_str
-
-
-# שימוש:
 if __name__ == "__main__":
     pdf_path = "PET Files/Panamera - PET File.pdf"
-    output_json_path = "output.json"
+    output_json_path = "output_final.json"
 
-    rows = extract_pdf_to_dicts(pdf_path, output_json_path)
+    rows = extract_with_accurate_columns(pdf_path, output_json_path)
+
+    # הדפס כמה דוגמאות
+    print("\nדוגמאות:")
+    for i, row in enumerate(rows[:10]):
+        print(f"\n[{i}] {json.dumps(row, ensure_ascii=False)}")
