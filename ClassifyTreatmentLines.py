@@ -7,26 +7,120 @@ from collections import defaultdict
 from tqdm import tqdm
 
 
-def classify_with_ollama(item, num_runs=3):
+def normalize_model_name(model_name):
+    """
+    נרמל את שם הדגם - הסר / / כפולים
+    """
+    # החלף / / ב-/
+    normalized = model_name.replace(' / / ', ' / ')
+    return normalized
+
+
+def sanitize_variant_name(variant_name):
+    """
+    נקה את שם הוריאנט כדי ליצור שם קובץ תקני
+    הסר slashes, spaces, underscores כפולים
+    """
+    # החלף את כל הslashes ו-spaces בunderscore
+    safe_name = variant_name.replace(' / ', '_').replace('/', '_').replace(' ', '_')
+
+    # הסר תווים שאינם alphanumeric או underscore (כולל hyphen)
+    safe_name = "".join(c for c in safe_name if c.isalnum() or c == '_')
+
+    # הסר underscores כפולים/משולשים וכו'
+    while '__' in safe_name:
+        safe_name = safe_name.replace('__', '_')
+
+    # הסר underscores בהתחלה או בסוף
+    safe_name = safe_name.strip('_')
+
+    # אם השם ריק, תן שם ברירת מחדל
+    if not safe_name:
+        safe_name = "model_variant"
+
+    return safe_name
+
+
+def classify_with_ollama(item, num_runs=1):
     """
     Classify item using Ollama with consistency-based confidence
     """
-    prompt = f"""Task: Classify this car service item.
+#     prompt = f"""Task: Classify this car service item.
+#
+# Service item: "{item}"
+#
+# Does this require ADDING or REPLACING a physical part (oil, filter, fluid, spark plug, etc.)?
+#
+# - Answer YES if it involves adding/replacing/changing parts
+# - Answer NO if it's only inspection/checking/reading/resetting
+#
+# Important:
+# - "Drain" without replacement = NO
+# - "Fill" or "Change" or "Replace" = YES
+# - "Check" or "Inspect" = NO
+#
+# Answer with ONLY one word: YES or NO"""
+
+#     prompt = f"""Task: Classify the following car-service line into one of two categories:
+# 1. PARTS — The line requires adding, replacing, installing, or changing a physical part or fluid.
+# 2. INSPECTION — The line describes checking, inspecting, reading, resetting, cleaning, verifying, or any diagnostic or administrative action.
+#
+# Service item: "{item}"
+#
+# Strict classification rules:
+# - Words meaning PARTS (always classify as PARTS):
+#   "replace", "change", "fill", "refill", "install", "add", "top up", "renew".
+# - Words meaning INSPECTION (always classify as INSPECTION):
+#   "check", "inspect", "visual inspection", "read", "reset", "diagnose",
+#   "diagnostic", "look", "verify", "test", "measure", "prepare report".
+# - Special rules:
+#   - "Drain" alone (without any replace/fill/change) = INSPECTION.
+#   - "Replace filter element" or any filter replacement = PARTS.
+#   - Changing/adding/refilling ANY oil/fluid = PARTS.
+#   - Any cleaning system check = INSPECTION.
+#   - Administrative tasks (prepare report, read memory) = INSPECTION.
+# - If both categories appear (e.g., "check and replace") → classify as PARTS.
+# - When in doubt → choose INSPECTION.
+#
+# Output format:
+# Respond with a single word only: "YES" for PARTS or "NO" for INSPECTION.
+# No explanation. No additional text. Only YES or NO.
+# """
+
+    prompt = f"""Task: Classify the following car-service line into one of two categories:
+- PARTS → The line requires adding, replacing, filling, changing, renewing, installing, or topping up any physical part or fluid.
+- INSPECTION → The line describes checking, inspecting, reading, resetting, measuring, diagnosing, cleaning, verifying, visually inspecting, or any administrative or functional check.
 
 Service item: "{item}"
 
-Does this require ADDING or REPLACING a physical part (oil, filter, fluid, spark plug, etc.)?
+Classification Rules (strict and deterministic):
 
-- Answer YES if it involves adding/replacing/changing parts
-- Answer NO if it's only inspection/checking/reading/resetting
+PARTS category keywords (always classify as PARTS if any appear):
+"replace", "change", "fill", "refill", "add", "install", "renew", 
+"top up", "replenish", "replace filter", "replace element", "replace fluid",
+"replace spark", "oil change", "fluid change".
 
-Important:
-- "Drain" without replacement = NO
-- "Fill" or "Change" or "Replace" = YES
-- "Check" or "Inspect" = NO
+INSPECTION category keywords (always classify as INSPECTION if ONLY these appear):
+"check", "inspect", "inspection", "visual inspection",
+"read", "reset", "diagnose", "diagnostic", "verify",
+"measure", "look", "test", "drain", "prepare report",
+"check function", "check condition", "check level",
+"read out memory", "reset maintenance interval".
 
-Answer with ONLY one word: YES or NO"""
+Special rules:
+- "Drain" WITHOUT "replace/change/fill/add" = INSPECTION.
+- ANY mention of a filter replacement = PARTS.
+- ANY addition/refill/change of a liquid/oil/fluid = PARTS.
+- ANY combination of both (e.g. “check and replace”) = PARTS always wins.
+- Administrative actions (prepare report, reset, read memory) = INSPECTION.
+- When the meaning is ambiguous → classify as INSPECTION.
 
+Output format:
+Respond with ONE WORD ONLY:
+- "YES" → if the line is PARTS
+- "NO" → if the line is INSPECTION
+Do NOT add explanations, reasoning, or extra text.
+"""
     results = []
 
     for run in range(num_runs):
@@ -39,7 +133,7 @@ Answer with ONLY one word: YES or NO"""
                     "stream": False,
                     "options": {"temperature": 0.3}
                 },
-                timeout=30
+                timeout=120
             )
 
             if response.status_code == 200:
@@ -73,8 +167,7 @@ Answer with ONLY one word: YES or NO"""
 def deduplicate_items(all_json_data):
     """
     אסוף את כל הפריטים מכל ה-JSONs,
-    הסר כפילויות והחזר dictionary:
-    {item_text: None}  → רק לסיווג פעם אחת
+    הסר כפילויות והחזר רשימה של פריטים ייחודיים
     """
     unique_items = set()
 
@@ -92,7 +185,7 @@ def deduplicate_items(all_json_data):
 def classify_unique_items(unique_items):
     """
     סווג את כל הפריטים הייחודיים (פעם אחת כל פריט)
-    החזר dictionary: {item_text: (category, confidence)}
+    החזר dictionary: {item_text: {category, confidence}}
     """
     classifications = {}
 
@@ -139,9 +232,7 @@ def load_json_files(folder_path):
 def extract_model_variants(json_file_data):
     """
     חלץ את כל וריאנטי הדגמים מ-JSON
-
-    עבור כל service_key, אם יש מספר מודלים (keys בדיקשנרי),
-    זה שונה דגמים
+    נרמל שמות דגמים לפני קיבוץ (הסר / / כפולים)
 
     החזר: {model_variant_name: {service_key: [items]}}
     """
@@ -150,26 +241,26 @@ def extract_model_variants(json_file_data):
     for service_key, models_dict in json_file_data.items():
         if isinstance(models_dict, dict):
             for model_name, items_list in models_dict.items():
+                # נרמל את שם הדגם
+                normalized_model_name = normalize_model_name(model_name)
+
                 if isinstance(items_list, list):
                     for item in items_list:
-                        model_variants[model_name][service_key].append(item)
+                        model_variants[normalized_model_name][service_key].append(item)
 
     return dict(model_variants)
 
 
 def process_json_file(json_file_info, classifications, output_base_path):
     """
-    עבדו קובץ JSON בודד:
+    עבדו קובץ JSON בודד - עם DEBUG
     1. חלץ וריאנטי דגמים
     2. לכל וריאנט, צור קובץ output בנפרד
     """
     json_filename = json_file_info['filename']
     json_data = json_file_info['data']
 
-    # חלץ שם הקובץ ללא סיומת
-    file_stem = os.path.splitext(json_filename)[0]
-
-    # חלץ וריאנטי דגמים
+    # חלץ וריאנטי דגמים (עם נורמליזציה)
     model_variants = extract_model_variants(json_data)
 
     print(f"\n{'=' * 80}")
@@ -181,15 +272,17 @@ def process_json_file(json_file_info, classifications, output_base_path):
     for variant_idx, (variant_name, services_dict) in enumerate(model_variants.items(), 1):
         print(f"\n[{variant_idx}/{len(model_variants)}] Processing variant: {variant_name}")
 
-        # המרת שם הוריאנט לשם קובץ
-        safe_variant_name = variant_name.replace(' / ', '_').replace('/', '_').replace(' ', '_')
-        safe_variant_name = "".join(c for c in safe_variant_name if c.isalnum() or c == '_')
+        # DEBUG: הראה את כל השירותים
+        print(f"  Services in this variant: {list(services_dict.keys())}")
+
+        # המרת שם הוריאנט לשם קובץ - עם ניקוי כפול
+        safe_variant_name = sanitize_variant_name(variant_name)
 
         # יצירת תיקייה לדגם זה
         model_folder = os.path.join(output_base_path, safe_variant_name)
         os.makedirs(model_folder, exist_ok=True)
 
-        # עברוד דוברים קטנים עם progress bar
+        # Progress bar לעיבוד השירותים
         pbar = tqdm(total=len(services_dict), desc=f"  Processing services", unit="service")
 
         # בנה את ה-output structure
@@ -205,8 +298,11 @@ def process_json_file(json_file_info, classifications, output_base_path):
 
         parts_items = []
         inspection_items = []
+        missing_items_count = 0
 
         for service_key, items_list in services_dict.items():
+            print(f"    Processing {service_key}: {len(items_list)} items")
+
             classified_output['services'][service_key] = {
                 'items': [],
                 'summary': {
@@ -237,10 +333,17 @@ def process_json_file(json_file_info, classifications, output_base_path):
                     else:
                         classified_output['services'][service_key]['summary']['inspection'] += 1
                         inspection_items.append(item_entry)
+                else:
+                    # DEBUG: פריט לא נמצא בסיווגים
+                    print(f"      ⚠️  Item not in classifications: {item[:50]}...")
+                    missing_items_count += 1
 
             pbar.update(1)
 
         pbar.close()
+
+        if missing_items_count > 0:
+            print(f"  ⚠️  Total missing items: {missing_items_count}")
 
         # מיון לפי confidence
         parts_items.sort(key=lambda x: x['confidence'], reverse=True)
@@ -290,7 +393,7 @@ def process_json_file(json_file_info, classifications, output_base_path):
 
 def main():
     print("=" * 80)
-    print("🔥 PORSCHE SERVICE ITEMS CLASSIFIER - JSON MODE")
+    print("🔥 PORSCHE SERVICE ITEMS CLASSIFIER - JSON MODE (WITH DEBUG)")
     print("=" * 80)
 
     # Check Ollama
@@ -333,8 +436,16 @@ def main():
     # Classify unique items
     classifications = classify_unique_items(unique_items)
 
+    # DEBUG: הראה כמה פריטים סווגו
+    print(f"\n🔍 DEBUG - Classifications summary:")
+    print(f"   Total classifications: {len(classifications)}")
+    parts_count = sum(1 for c in classifications.values() if c['category'] == 'PARTS')
+    inspection_count = sum(1 for c in classifications.values() if c['category'] == 'INSPECTION')
+    print(f"   Parts: {parts_count}")
+    print(f"   Inspection: {inspection_count}")
+
     # Create output directory structure
-    output_base_path = "../Classification Results"
+    output_base_path = "Classification Results"
     os.makedirs(output_base_path, exist_ok=True)
 
     # Process each JSON file

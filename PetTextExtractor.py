@@ -152,12 +152,45 @@ def parse_row_accurate(row_words):
 
 
 if __name__ == "__main__":
-    pdf_path = "PET Files/Panamera - PET File.pdf"
-    output_json_path = "output_final.json"
+    import os
+    import glob
 
-    rows = extract_with_accurate_columns(pdf_path, output_json_path)
+    # בקשת תיקיית קלט מהמשתמש
+    input_folder = input("הכנס/י תיקייה עם קבצי PET (לדוגמה: 'PET Files'): ").strip()
 
-    # הדפס כמה דוגמאות
-    print("\nדוגמאות:")
-    for i, row in enumerate(rows[:10]):
-        print(f"\n[{i}] {json.dumps(row, ensure_ascii=False)}")
+    if not os.path.isdir(input_folder):
+        print(f"❌ השגיאה: '{input_folder}' אינה תיקייה תקינה.")
+        exit()
+
+    # יצירת תיקיית פלט
+    output_folder = "PET Outputs"
+    os.makedirs(output_folder, exist_ok=True)
+
+    # מציאת כל קבצי ה-PDF בתיקייה
+    pdf_files = glob.glob(os.path.join(input_folder, "*.pdf"))
+
+    if not pdf_files:
+        print("❌ לא נמצאו קבצי PDF בתיקייה.")
+        exit()
+
+    print(f"\n✓ נמצאו {len(pdf_files)} קבצים. מתחיל עיבוד...\n")
+
+    for pdf_path in pdf_files:
+        file_name = os.path.basename(pdf_path)
+
+        # הוצאת שם ללא הסיומת
+        base_name = file_name.replace(".pdf", "")
+
+        # הורדת " - PET File" אם קיים
+        clean_name = base_name.replace(" - PET File", "").strip()
+
+        # יצירת שם פלט
+        output_name = f"{clean_name} PET lines.json"
+        output_path = os.path.join(output_folder, output_name)
+
+        print(f"⏳ מעבד: {file_name}")
+        rows = extract_with_accurate_columns(pdf_path, output_path)
+        print(f"✅ נשמר: {output_path}\n")
+
+    print("\n🎉 הסתיים! כל הפלטים נמצאים בתיקייה:")
+    print(f"➡  {output_folder}")
