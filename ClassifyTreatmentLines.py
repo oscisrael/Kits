@@ -362,27 +362,27 @@ def process_json_file(json_file_info, classifications, output_base_path):
             model_folder,
             f"{safe_variant_name}_classified.json"
         )
-        with open(main_output_file, 'w', encoding='utf-8') as f:
-            json.dump(classified_output, f, ensure_ascii=False, indent=2)
-        print(f"  ✅ Saved: {os.path.basename(main_output_file)}")
-
-        # 2. קובץ parts בלבד
-        parts_output_file = os.path.join(
-            model_folder,
-            f"{safe_variant_name}_parts_only.json"
-        )
-        with open(parts_output_file, 'w', encoding='utf-8') as f:
-            json.dump(parts_items, f, ensure_ascii=False, indent=2)
-        print(f"  ✅ Saved: {os.path.basename(parts_output_file)}")
-
-        # 3. קובץ inspection בלבד
-        inspection_output_file = os.path.join(
-            model_folder,
-            f"{safe_variant_name}_inspection_only.json"
-        )
-        with open(inspection_output_file, 'w', encoding='utf-8') as f:
-            json.dump(inspection_items, f, ensure_ascii=False, indent=2)
-        print(f"  ✅ Saved: {os.path.basename(inspection_output_file)}")
+        # with open(main_output_file, 'w', encoding='utf-8') as f:
+        #     json.dump(classified_output, f, ensure_ascii=False, indent=2)
+        # print(f"  ✅ Saved: {os.path.basename(main_output_file)}")
+        #
+        # # 2. קובץ parts בלבד
+        # parts_output_file = os.path.join(
+        #     model_folder,
+        #     f"{safe_variant_name}_parts_only.json"
+        # )
+        # with open(parts_output_file, 'w', encoding='utf-8') as f:
+        #     json.dump(parts_items, f, ensure_ascii=False, indent=2)
+        # print(f"  ✅ Saved: {os.path.basename(parts_output_file)}")
+        #
+        # # 3. קובץ inspection בלבד
+        # inspection_output_file = os.path.join(
+        #     model_folder,
+        #     f"{safe_variant_name}_inspection_only.json"
+        # )
+        # with open(inspection_output_file, 'w', encoding='utf-8') as f:
+        #     json.dump(inspection_items, f, ensure_ascii=False, indent=2)
+        # print(f"  ✅ Saved: {os.path.basename(inspection_output_file)}")
 
         # סיכום
         print(f"\n  📊 Summary for {variant_name}:")
