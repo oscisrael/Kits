@@ -41,6 +41,7 @@ def main():
         # הצגת תוצאות
         print("\n📋 תוצאות:")
         print(f"   קוד דגם:        {result['model_code']}")
+        print(f"   שנה:        {result['year']}")
         print(f"   תיאור דגם:      {result['model_description']}")
         print(f"   רמת ביטחון:     {result['confidence']}%")
         print(f"   מקור זיהוי:     {result['source']}")

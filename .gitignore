@@ -18,3 +18,5 @@ __pycache__/
 # OS
 *.pdf
 *.json
+*.xlsx
+*.pkl
