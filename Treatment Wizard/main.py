@@ -1,15 +1,23 @@
 """
+
 main.py
+
 Treatment Wizard - Main Pipeline
 
 Input: VIN number
-Output: Service_lines_with_part_number.json
+
+Output: Combined_Service_Baskets.json
 
 Usage:
-    python main.py <VIN>                    # Skip existing files
-    python main.py <VIN> --force            # Regenerate all files
-    python main.py WP0ZZZ976PL135008
-    python main.py WP0ZZZ976PL135008 --force --base-path "C:\\custom\\path"
+
+python main.py # Skip existing files
+
+python main.py --force # Regenerate all files
+
+python main.py WP0ZZZ976PL135008
+
+python main.py WP0ZZZ976PL135008 --force --base-path "C:\\custom\\path"
+
 """
 
 import sys
@@ -27,7 +35,7 @@ from step2_extract_pdf import extract_treatments_from_pdfs
 from step3_classify import classify_treatment_lines
 from step4_extract_pet import extract_pet_lines
 from step5_match_parts import match_parts_to_services
-
+from step6_create_service_baskets import create_service_baskets
 
 class TreatmentWizard:
     """Main pipeline orchestrator"""
@@ -57,7 +65,6 @@ class TreatmentWizard:
         print("-"*70)
 
         model_info = detect_model_from_vin(vin)
-
         if not model_info or model_info['confidence'] == 0:
             print(f"❌ Failed to decode VIN: {vin}")
             return None
@@ -172,26 +179,51 @@ class TreatmentWizard:
         print("STEP 5: Parts Matching")
         print("-"*70)
 
-        final_output = model_dir / "Service_lines_with_part_number.json"
+        service_lines_output = model_dir / "Service_lines_with_part_number.json"
+
+        if service_lines_output.exists() and not force:
+            print(f"✅ Output already exists: {service_lines_output}")
+            print("⏭️  Skipping to next step...")
+            with open(service_lines_output, 'r', encoding='utf-8') as f:
+                service_lines_data = json.load(f)
+        else:
+            if force and service_lines_output.exists():
+                print(f"⚠️  Force mode: Regenerating {service_lines_output}")
+
+            print("▶️  Running parts matching...")
+            service_lines_data = match_parts_to_services(classified_data, pet_data, model_desc)
+
+            if service_lines_data:
+                with open(service_lines_output, 'w', encoding='utf-8') as f:
+                    json.dump(service_lines_data, f, ensure_ascii=False, indent=2)
+                print(f"✅ Parts matching completed: {service_lines_output}")
+            else:
+                print("❌ Parts matching failed")
+                return None
+
+        # ====== STEP 6: Create Service Baskets ======
+        print("\n" + "="*70)
+        print("STEP 6: Service Baskets Creation")
+        print("-"*70)
+
+        final_output = model_dir / "Combined_Service_Baskets.json"
 
         if final_output.exists() and not force:
             print(f"✅ Output already exists: {final_output}")
             print("⏭️  Final output ready!")
-            with open(final_output, 'r', encoding='utf-8') as f:
-                final_data = json.load(f)
         else:
             if force and final_output.exists():
                 print(f"⚠️  Force mode: Regenerating {final_output}")
 
-            print("▶️  Running parts matching...")
-            final_data = match_parts_to_services(classified_data, pet_data, model_desc)
+            print("▶️  Running service basket creation...")
+            baskets_data = create_service_baskets(service_lines_data)
 
-            if final_data:
+            if baskets_data:
                 with open(final_output, 'w', encoding='utf-8') as f:
-                    json.dump(final_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Parts matching completed: {final_output}")
+                    json.dump(baskets_data, f, ensure_ascii=False, indent=2)
+                print(f"✅ Service baskets created: {final_output}")
             else:
-                print("❌ Parts matching failed")
+                print("❌ Service basket creation failed")
                 return None
 
         # ====== SUMMARY ======
@@ -205,24 +237,24 @@ class TreatmentWizard:
 
         return final_output
 
-
 def main():
     parser = argparse.ArgumentParser(
         description='Treatment Wizard - VIN Processing Pipeline',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py WP0ZZZ976PL135008                           # Normal mode (skip existing)
-  python main.py WP0ZZZ976PL135008 --force                   # Force mode (regenerate all)
+  python main.py WP0ZZZ976PL135008               # Normal mode (skip existing)
+  python main.py WP0ZZZ976PL135008 --force       # Force mode (regenerate all)
   python main.py WP0ZZZ976PL135008 --base-path "C:\\custom"  # Custom base path
-        """
+"""
     )
+
     parser.add_argument('vin', type=str, help='Vehicle VIN number (17 characters)')
     parser.add_argument('--force', action='store_true',
-                       help='Force regeneration of all files (even if they exist)')
+                        help='Force regeneration of all files (even if they exist)')
     parser.add_argument('--base-path', type=str,
-                       default=r'C:\Users\MayPery\PycharmProjects\Kits\Cars',
-                       help='Base path to car database directory')
+                        default=r'C:\Users\MayPery\PycharmProjects\Kits\Cars',
+                        help='Base path to car database directory')
 
     args = parser.parse_args()
 
@@ -242,21 +274,23 @@ Examples:
 
     try:
         result = wizard.run_pipeline(args.vin, force=args.force)
+
         if result:
             print("\n🎉 Pipeline completed successfully!")
             sys.exit(0)
         else:
             print("\n❌ Pipeline failed")
             sys.exit(1)
+
     except KeyboardInterrupt:
         print("\n\n⚠️  Pipeline interrupted by user")
         sys.exit(130)
+
     except Exception as e:
         print(f"\n❌ Pipeline failed with error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

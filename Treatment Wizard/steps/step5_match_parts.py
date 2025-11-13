@@ -9,7 +9,12 @@ INPUT:
 
 OUTPUT: Final matched data with part numbers for each service
 
-Uses functions from ServiceAndPetMatching.py
+Features:
+- Smart fuzzy matching between service lines and PET parts
+- Special rules for specific models (Panamera/Cayenne oil filter add-ons)
+- Oil capacity calculation from model
+- Original PDF headers as keys
+- Sorted by interval with time-dependent last
 """
 
 import sys
@@ -113,7 +118,7 @@ def similarity_score(text1: str, text2: str) -> float:
 
 
 def best_pet_match(service_line: str, pet_rows: List[Dict],
-                   model_name: str, min_score: float = 0.3) -> List[Dict]:
+                   model_name: str, min_score: float = 0.25) -> List[Dict]:
     """
     Find best matching PET parts for a service line
 
@@ -121,7 +126,7 @@ def best_pet_match(service_line: str, pet_rows: List[Dict],
         service_line: Service line text (e.g., "Fill in engine oil")
         pet_rows: List of PET parts
         model_name: Model name for filtering
-        min_score: Minimum similarity score
+        min_score: Minimum similarity score (default 0.25 for broader matches)
 
     Returns:
         List of matched parts (sorted by score)
@@ -129,14 +134,22 @@ def best_pet_match(service_line: str, pet_rows: List[Dict],
     matches = []
 
     service_clean = clean_text(service_line)
+    service_lower = service_line.lower()
 
     for pet_row in pet_rows:
         desc = pet_row.get('Description', '')
         remark = pet_row.get('Remark', '')
         part_num = pet_row.get('Part Number', '')
 
+        # Special case: if service contains "engine oil" or "fill in", boost score if PET has "engine oil"
+        desc_lower = desc.lower()
+        boost_score = 0.0
+        if ('engine oil' in service_lower or 'fill in' in service_lower):
+            if 'engine oil' in desc_lower and 'filter' not in desc_lower:
+                boost_score = 0.3  # Boost engine oil matches
+
         # Calculate scores
-        desc_score = similarity_score(service_line, desc)
+        desc_score = similarity_score(service_line, desc) + boost_score
         remark_score = similarity_score(service_line, remark) * 0.5  # Lower weight
 
         total_score = max(desc_score, remark_score)
@@ -167,16 +180,90 @@ def apply_special_rules(service_line: str, model_name: str,
         matches: Initial matches
 
     Returns:
-        Filtered/adjusted matches
+        List of matched parts (with additions for oil filter case)
     """
     service_lower = service_line.lower()
+    model_lower = model_name.lower()
 
-    # Rule 1: Engine oil - prefer higher X version for certain models
-    if 'engine oil' in service_lower or 'fill in' in service_lower:
+    # Check if Panamera or Cayenne
+    is_panamera = 'panamera' in model_lower
+    is_cayenne = 'cayenne' in model_lower
+    # Rule 1: Change oil filter - add drain plug and washer (Panamera/Cayenne only)
+    if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
         if matches:
-            # Extract X versions
-            x_versions = []
+            # Find "with seal" match specifically
+            seal_match = None
             for match in matches:
+                desc_lower = match.get('description', '').lower()
+                if 'with seal' in desc_lower or 'seal' in desc_lower:
+                    seal_match = match
+                    break
+
+            # If no "with seal" found, take first match
+            if not seal_match:
+                seal_match = matches[0]
+
+            # Build result with oil filter + drain plug + washer
+            result = [seal_match]
+
+            # Add drain plug
+            result.append({
+                'part_number': 'PAF911679',
+                'description': 'Oil drain plug',
+                'remark': 'פקק לאגן שמן',
+                'quantity': '1',
+                'score': 1.0,
+                'is_addon': True
+            })
+
+            # Add drain washer
+            result.append({
+                'part_number': 'PAF013849',
+                'description': 'Oil drain washer',
+                'remark': 'שייבה לאגן שמן',
+                'quantity': '1',
+                'score': 1.0,
+                'is_addon': True
+            })
+
+            print(f"   🔧 Added oil drain plug + washer for Panamera/Cayenne")
+            return result
+        else:
+            return matches
+
+    # Rule 2: Fill in engine oil - ONLY match ENGINE oil (not oil filter!)
+    if 'fill in' in service_lower and 'engine oil' in service_lower:
+        if matches:
+            # Filter matches: MUST contain "engine" or "motor" in description
+            # AND must NOT contain "filter" (to exclude oil filter)
+            engine_oil_matches = []
+            for match in matches:
+                desc_lower = match.get('description', '').lower()
+                remark_lower = match.get('remark', '').lower()
+
+                # Must have "engine" or "motor" in description/remark
+                has_engine = ('engine' in desc_lower or 'motor' in desc_lower or
+                              'engine' in remark_lower or 'motor' in remark_lower)
+
+                # Must NOT have "filter" (excludes oil filter)
+                has_no_filter = 'filter' not in desc_lower
+
+                # Must NOT be cleaning/grease/brake
+                is_not_noise = ('window' not in desc_lower and
+                                'grease' not in desc_lower and
+                                'brake' not in desc_lower and
+                                'cleaning' not in desc_lower)
+
+                if has_engine and has_no_filter and is_not_noise:
+                    engine_oil_matches.append(match)
+
+            if not engine_oil_matches:
+                print(f"   ⚠️  No ENGINE OIL match found (filtered out filter/noise)")
+                return []
+
+            # Extract X versions from filtered matches
+            x_versions = []
+            for match in engine_oil_matches:
                 desc = match.get('description', '')
                 x_ver = extract_x_version(desc)
                 if x_ver > 0:
@@ -187,26 +274,31 @@ def apply_special_rules(service_line: str, model_name: str,
                 x_versions.sort(key=lambda x: x[0], reverse=True)
 
                 # Prefer highest X version for performance models
-                if 'gts' in model_name.lower() or 'turbo' in model_name.lower():
+                if 'gts' in model_lower or 'turbo' in model_lower:
                     return [x_versions[0][1]]  # Highest X
                 else:
                     return [x_versions[-1][1]]  # Lowest X
+            else:
+                # No X version found, return best engine oil match
+                return [engine_oil_matches[0]]
 
-    # Rule 2: Oil filter - take first match
+    # Rule 3: Oil filter - take first match
     if 'oil filter' in service_lower:
         if matches:
             return [matches[0]]
 
-    # Rule 3: Brake pads - usually no part number (inspection)
+    # Rule 4: Brake pads - usually no part number (inspection)
     if 'brake' in service_lower and 'check' in service_lower:
         return []
 
-    # Default: return top 3 matches
-    return matches[:3]
+    # Default: return ONLY top match (not top 3!)
+    return matches[:1] if matches else []
+
+
 
 
 def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
-                            model_description: str) -> Optional[Dict]:
+                           model_description: str) -> Optional[Dict]:
     """
     Match PARTS lines from classified treatments to PET part numbers
 
@@ -231,6 +323,16 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
                         "REMARK": "Porsche Classic Motoroil",
                         "QUANTITY": "8.5",
                         "MATCH SCORE": 0.85
+                    },
+                    {
+                        "SERVICE LINE": "Change oil filter (פקק לאגן שמן)",
+                        "CATEGORY": "PARTS",
+                        "CONFIDENCE": 0.98,
+                        "PART NUMBER": "PAF911679",
+                        "DESCRIPTION": "Oil drain plug",
+                        "REMARK": "פקק לאגן שמן",
+                        "QUANTITY": "1",
+                        "MATCH SCORE": 1.0
                     },
                     ...
                 ]
@@ -315,22 +417,29 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
 
             # Build output
             if matches:
-                # Take best match
-                best_match = matches[0]
+                # Process all matches (including add-ons)
+                for match in matches:
+                    is_addon = match.get('is_addon', False)
 
-                service_output["matched_parts"].append({
-                    "SERVICE LINE": text,
-                    "CATEGORY": category,
-                    "CONFIDENCE": confidence,
-                    "PART NUMBER": best_match.get('part_number', 'NOT FOUND'),
-                    "DESCRIPTION": best_match.get('description', ''),
-                    "REMARK": best_match.get('remark', ''),
-                    "QUANTITY": quantity if "oil" in text.lower() else best_match.get('quantity', '1'),
-                    "MATCH SCORE": round(best_match.get('score', 0), 3)
-                })
+                    # For add-ons, modify SERVICE LINE
+                    if is_addon:
+                        service_line_text = f"{text} ({match.get('remark', '')})"
+                    else:
+                        service_line_text = text
 
-                matched_parts += 1
-                print(f"   ✅ {text[:40]}... → {best_match.get('part_number', 'N/A')}")
+                    service_output["matched_parts"].append({
+                        "SERVICE LINE": service_line_text,
+                        "CATEGORY": category,
+                        "CONFIDENCE": confidence,
+                        "PART NUMBER": match.get('part_number', 'NOT FOUND'),
+                        "DESCRIPTION": match.get('description', ''),
+                        "REMARK": match.get('remark', ''),
+                        "QUANTITY": quantity if "oil" in text.lower() and not is_addon else match.get('quantity', '1'),
+                        "MATCH SCORE": round(match.get('score', 0), 3)
+                    })
+
+                matched_parts += len(matches)
+                print(f"   ✅ {text[:40]}... → {len(matches)} part(s)")
             else:
                 # No match found
                 service_output["matched_parts"].append({
@@ -418,9 +527,9 @@ def _test():
         }
     ]
 
-    print("=" * 70)
+    print("="*70)
     print("Testing Step 5: Parts Matching")
-    print("=" * 70)
+    print("="*70)
 
     result = match_parts_to_services(sample_classified, sample_pet, "Panamera GTS")
 
