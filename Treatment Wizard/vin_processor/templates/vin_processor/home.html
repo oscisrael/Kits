@@ -1,12 +1,10 @@
 {% extends 'vin_processor/base.html' %}
 
-{% block title %}הכנס מספר VIN | Treatment Wizard{% endblock %}
+{% block title %}Kits{% endblock %}
 
 {% block content %}
 <section class="hero-section">
     <div class="hero-content">
-        <!-- הסרנו את hero-title וה-hero-subtitle -->
-
         <div class="vin-card">
             <input
                 type="text"
@@ -15,7 +13,7 @@
                 placeholder="הכנס מספר VIN"
                 maxlength="17"
             >
-            <button id="startBtn" class="btn-primary">יצירת קיט טיפולים</button>
+            <button id="startBtn" class="btn-primary">צור קיט טיפולים</button>
 
             <div id="loadingContainer" class="loading-container">
                 <div class="spinner"></div>
@@ -91,22 +89,31 @@
     });
 
     function pollProgress(taskId) {
+        let displayedProgress = 0; // התקדמות מוצגת
+
         const interval = setInterval(async () => {
             try {
                 const response = await fetch(`/progress/${taskId}/`);
                 const data = await response.json();
 
-                // Slow down progress for effect (multiply by 0.8)
-                const adjustedProgress = Math.floor(data.progress * 0.8);
+                // חישוב התקדמות ממשית (עם האטה)
+                const realProgress = Math.floor(data.progress * 0.6); // האטה ל-60% מהמהירות
 
-                updateProgress(adjustedProgress, data.current_step);
+                // עדכון הדרגתי של התקדמות המוצגת
+                if (displayedProgress < realProgress) {
+                    displayedProgress += 1; // עלייה איטית (1% בכל פעם)
+                }
+
+                updateProgress(displayedProgress, data.current_step);
 
                 if (data.status === 'COMPLETED') {
                     clearInterval(interval);
+                    // הצגת 100% לפני מעבר
+                    displayedProgress = 100;
                     updateProgress(100, 'הושלם בהצלחה!');
                     setTimeout(() => {
                         window.location.href = `/results/${taskId}/`;
-                    }, 1000);
+                    }, 1500); // המתנה של 1.5 שניות
                 } else if (data.status === 'FAILED') {
                     clearInterval(interval);
                     showError('שגיאה: ' + data.error_message);
@@ -115,7 +122,7 @@
             } catch (error) {
                 console.error('Polling error:', error);
             }
-        }, 800);
+        }, 1000); // בדיקה כל שנייה (במקום 800ms)
     }
 
     function updateProgress(percentage, step) {

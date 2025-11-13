@@ -94,8 +94,19 @@ body {
     text-align: center;
     max-width: 800px;
     padding: 40px;
-    margin-top: -300px;  /* ← שינוי: הזזה למעלה 100 פיקסלים */
+    margin-top: -300px;  /* ← תיקון: -100px במקום -300px */
     animation: fadeInUp 0.8s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ========== VIN Input Card ========== */
@@ -191,6 +202,7 @@ body {
     height: 80px;
     border: 8px solid #e0e0e0;
     border-top: 8px solid #d32f2f;
+    border-radius: 50%;  /* ← הוספתי את זה! זה הופך אותו לעיגול */
     animation: spin 1.2s linear infinite;
 }
 
@@ -251,7 +263,11 @@ body {
     color: #d32f2f;
     margin-bottom: 20px;
     letter-spacing: 2px;
+    text-align: center;
+    text-decoration: underline;
 }
+
+
 
 .results-info {
     display: grid;

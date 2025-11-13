@@ -1,21 +1,18 @@
 {% extends 'vin_processor/base.html' %}
 {% load custom_filters %}
+{% load humanize %}
 
 {% block title %}תוצאות - {{ vin }}{% endblock %}
 
 {% block content %}
 <div class="results-container">
     <div class="results-header">
-        <div class="results-vin">VIN: {{ vin }}</div>
+        <div class="results-vin" title="VIN">{{ vin }}</div>
 
         <div class="results-info">
             <div class="info-item">
                 <div class="info-label">דגם הרכב</div>
                 <div class="info-value">{{ model }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">קיבולת שמן</div>
-                <div class="info-value">{{ oil_capacity }} ליטר</div>
             </div>
             <div class="info-item">
                 <div class="info-label">סה"כ טיפולים</div>
@@ -29,7 +26,7 @@
         {% for km, service_data in services.items %}
         <button class="tab-button {% if forloop.first %}active{% endif %}"
                 onclick="showTab('{{ km }}', this)">
-            {{ service_data.mileage_km|floatformat:0 }} ק"מ
+            {{ service_data.mileage_km|intcomma }} ק"מ
         </button>
         {% endfor %}
     </div>
@@ -44,7 +41,7 @@
             </div>
             <div class="service-meta-item">
                 <span class="service-meta-label">קילומטראז':</span>
-                <span class="service-meta-value">{{ service_data.mileage_km|floatformat:0 }} ק"מ</span>
+                <span class="service-meta-value">{{ service_data.mileage_km|intcomma }} ק"מ</span>
             </div>
             <div class="service-meta-item">
                 <span class="service-meta-label">סה"כ חלקים:</span>
