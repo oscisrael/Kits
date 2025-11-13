@@ -597,6 +597,11 @@ def map_services_intersection_based(pdf_path, text_data, service_type):
     for x_val, service in sorted(x_to_service.items()):
         print(f" X={x_val:.1f} → {service}")
 
+    print(f"\n 🗺️ Service mapping:")
+    for x_val, service in sorted(x_to_service.items()):
+        print(f" X={x_val:.1f} → {service}")
+
+
     final_mapping = defaultdict(lambda: defaultdict(list))
 
     print(f"\n 🔗 Checking {len(text_data)} treatments across {len(set(item['page'] for item in text_data))} pages...")
@@ -635,8 +640,23 @@ def map_services_intersection_based(pdf_path, text_data, service_type):
     doc.close()
 
     result = {}
+    # Build result with original headers
+    result = {}
+    service_to_original_header = {}
+
+    # Create mapping from normalized key to original header
+    for x_val in service_cols.keys():
+        normalized_key = x_to_service.get(x_val)
+        if normalized_key:
+            original_header = service_cols[x_val]
+            service_to_original_header[normalized_key] = original_header
+
+    # Build result with metadata
     for service, models_dict in final_mapping.items():
-        result[service] = dict(models_dict)
+        result[service] = {
+            "original_header": service_to_original_header.get(service, service),
+            "items": dict(models_dict)
+        }
 
     return result
 

@@ -3,7 +3,7 @@ train_vin_model.py
 סקריפט לאימון המערכת החכמה פעם אחת
 """
 
-from SmartVinDecoder import SmartVinDecoder
+from foundation_codes.SmartVinDecoder import SmartVinDecoder
 
 def main():
     print("="*70)
@@ -11,7 +11,7 @@ def main():
     print("="*70)
 
     # יצירת המערכת - תני נתיב מלא לקובץ!
-    excel_path = r"Treatment Wizard/ExcelDB/VINS and Model Descriptions - including Model Code (all data).xlsx"
+    excel_path = r"ExcelDB/VINS and Model Descriptions - including Model Code (all data).xlsx"
 
     decoder = SmartVinDecoder(excel_path)
 
