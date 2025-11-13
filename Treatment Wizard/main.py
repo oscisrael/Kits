@@ -1,23 +1,13 @@
 """
-
-main.py
-
 Treatment Wizard - Main Pipeline
 
 Input: VIN number
-
-Output: Combined_Service_Baskets.json
+Output: Combined_Service_Baskets.json  (STEP 7 disabled)
 
 Usage:
-
-python main.py # Skip existing files
-
-python main.py --force # Regenerate all files
-
-python main.py WP0ZZZ976PL135008
-
-python main.py WP0ZZZ976PL135008 --force --base-path "C:\\custom\\path"
-
+    python main.py WP0ZZZ976PL135008
+    python main.py WP0ZZZ976PL135008 --force
+    python main.py WP0ZZZ976PL135008 --base-path "C:\\custom"
 """
 
 import sys
@@ -36,6 +26,9 @@ from step3_classify import classify_treatment_lines
 from step4_extract_pet import extract_pet_lines
 from step5_match_parts import match_parts_to_services
 from step6_create_service_baskets import create_service_baskets
+# STEP 7 intentionally disabled
+# from step7_translate import translate_service_baskets
+
 
 class TreatmentWizard:
     """Main pipeline orchestrator"""
@@ -45,12 +38,10 @@ class TreatmentWizard:
 
     def run_pipeline(self, vin: str, force: bool = False):
         """
-        Run the complete pipeline for a given VIN
-
-        Args:
-            vin: Vehicle VIN number
-            force: If True, regenerate all files even if they exist
+        Run the complete pipeline for a given VIN.
+        STEP 7 disabled → Pipeline ends after STEP 6.
         """
+
         print("="*70)
         print("🚗 Treatment Wizard - VIN Processing Pipeline")
         print("="*70)
@@ -71,8 +62,8 @@ class TreatmentWizard:
 
         model_code = model_info['model_code']
         model_family = model_info['model_family']
-        model_desc = model_info['model_description']
-        year = model_info['year']
+        model_desc  = model_info['model_description']
+        year        = model_info['year']
 
         print(f"✅ Model detected:")
         print(f"   Code: {model_code}")
@@ -81,7 +72,6 @@ class TreatmentWizard:
         print(f"   Year: {year}")
         print(f"   Confidence: {model_info['confidence']}%")
 
-        # Build directory path
         model_dir = self.base_path / model_family / model_code
 
         if not model_dir.exists():
@@ -100,23 +90,19 @@ class TreatmentWizard:
         if pdf_output.exists() and not force:
             print(f"✅ Output already exists: {pdf_output}")
             print("⏭️  Skipping to next step...")
-            with open(pdf_output, 'r', encoding='utf-8') as f:
-                treatments_data = json.load(f)
+            treatments_data = json.load(open(pdf_output, 'r', encoding='utf-8'))
         else:
-            if force and pdf_output.exists():
-                print(f"⚠️  Force mode: Regenerating {pdf_output}")
-
             print("▶️  Running PDF extraction...")
             treatments_data = extract_treatments_from_pdfs(model_dir)
 
-            if treatments_data:
-                pdf_output.parent.mkdir(parents=True, exist_ok=True)
-                with open(pdf_output, 'w', encoding='utf-8') as f:
-                    json.dump(treatments_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Extraction completed: {pdf_output}")
-            else:
+            if not treatments_data:
                 print("❌ PDF extraction failed")
                 return None
+
+            pdf_output.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(treatments_data, open(pdf_output, 'w', encoding='utf-8'),
+                      ensure_ascii=False, indent=2)
+            print(f"✅ Extraction completed: {pdf_output}")
 
         # ====== STEP 3: Classify Treatment Lines ======
         print("\n" + "="*70)
@@ -127,24 +113,20 @@ class TreatmentWizard:
 
         if classified_output.exists() and not force:
             print(f"✅ Output already exists: {classified_output}")
-            print("⏭️  Skipping to next step...")
-            with open(classified_output, 'r', encoding='utf-8') as f:
-                classified_data = json.load(f)
+            print("⏭️  Skipping...")
+            classified_data = json.load(open(classified_output, 'r', encoding='utf-8'))
         else:
-            if force and classified_output.exists():
-                print(f"⚠️  Force mode: Regenerating {classified_output}")
-
             print("▶️  Running classification...")
             classified_data = classify_treatment_lines(treatments_data, model_desc)
 
-            if classified_data:
-                classified_output.parent.mkdir(parents=True, exist_ok=True)
-                with open(classified_output, 'w', encoding='utf-8') as f:
-                    json.dump(classified_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Classification completed: {classified_output}")
-            else:
+            if not classified_data:
                 print("❌ Classification failed")
                 return None
+
+            classified_output.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(classified_data, open(classified_output, 'w', encoding='utf-8'),
+                      ensure_ascii=False, indent=2)
+            print(f"✅ Classification completed: {classified_output}")
 
         # ====== STEP 4: Extract PET Lines ======
         print("\n" + "="*70)
@@ -155,24 +137,20 @@ class TreatmentWizard:
 
         if pet_output.exists() and not force:
             print(f"✅ Output already exists: {pet_output}")
-            print("⏭️  Skipping to next step...")
-            with open(pet_output, 'r', encoding='utf-8') as f:
-                pet_data = json.load(f)
+            print("⏭️  Skipping...")
+            pet_data = json.load(open(pet_output, 'r', encoding='utf-8'))
         else:
-            if force and pet_output.exists():
-                print(f"⚠️  Force mode: Regenerating {pet_output}")
-
             print("▶️  Running PET extraction...")
             pet_data = extract_pet_lines(model_dir)
 
-            if pet_data:
-                pet_output.parent.mkdir(parents=True, exist_ok=True)
-                with open(pet_output, 'w', encoding='utf-8') as f:
-                    json.dump(pet_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ PET extraction completed: {pet_output}")
-            else:
+            if not pet_data:
                 print("❌ PET extraction failed")
                 return None
+
+            pet_output.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(pet_data, open(pet_output, 'w', encoding='utf-8'),
+                      ensure_ascii=False, indent=2)
+            print(f"✅ PET extraction completed: {pet_output}")
 
         # ====== STEP 5: Match Parts to Services ======
         print("\n" + "="*70)
@@ -182,96 +160,111 @@ class TreatmentWizard:
         service_lines_output = model_dir / "Service_lines_with_part_number.json"
 
         if service_lines_output.exists() and not force:
-            print(f"✅ Output already exists: {service_lines_output}")
-            print("⏭️  Skipping to next step...")
-            with open(service_lines_output, 'r', encoding='utf-8') as f:
-                service_lines_data = json.load(f)
+            print(f"✅ Output exists: {service_lines_output}")
+            print("⏭️  Skipping...")
+            service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
         else:
-            if force and service_lines_output.exists():
-                print(f"⚠️  Force mode: Regenerating {service_lines_output}")
-
             print("▶️  Running parts matching...")
             service_lines_data = match_parts_to_services(classified_data, pet_data, model_desc)
 
-            if service_lines_data:
-                with open(service_lines_output, 'w', encoding='utf-8') as f:
-                    json.dump(service_lines_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Parts matching completed: {service_lines_output}")
-            else:
+            if not service_lines_data:
                 print("❌ Parts matching failed")
                 return None
+
+            json.dump(service_lines_data,
+                      open(service_lines_output, 'w', encoding='utf-8'),
+                      ensure_ascii=False, indent=2)
+            print(f"✅ Parts matching completed: {service_lines_output}")
 
         # ====== STEP 6: Create Service Baskets ======
         print("\n" + "="*70)
         print("STEP 6: Service Baskets Creation")
         print("-"*70)
 
-        final_output = model_dir / "Combined_Service_Baskets.json"
+        baskets_output = model_dir / "Combined_Service_Baskets.json"
 
-        if final_output.exists() and not force:
-            print(f"✅ Output already exists: {final_output}")
-            print("⏭️  Final output ready!")
+        if baskets_output.exists() and not force:
+            print(f"✅ Output already exists: {baskets_output}")
+            print("⏭️  Skipping...")
+            baskets_data = json.load(open(baskets_output, 'r', encoding='utf-8'))
         else:
-            if force and final_output.exists():
-                print(f"⚠️  Force mode: Regenerating {final_output}")
-
-            print("▶️  Running service basket creation...")
+            print("▶️  Creating service baskets...")
             baskets_data = create_service_baskets(service_lines_data)
 
-            if baskets_data:
-                with open(final_output, 'w', encoding='utf-8') as f:
-                    json.dump(baskets_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Service baskets created: {final_output}")
-            else:
+            if not baskets_data:
                 print("❌ Service basket creation failed")
                 return None
 
-        # ====== SUMMARY ======
-        print("\n" + "="*70)
-        print("✅ PIPELINE COMPLETED SUCCESSFULLY")
-        print("="*70)
-        print(f"Final output: {final_output}")
-        print(f"Model: {model_desc} ({model_code})")
-        print(f"Year: {year}")
-        print("="*70)
+            json.dump(baskets_data,
+                      open(baskets_output, 'w', encoding='utf-8'),
+                      ensure_ascii=False, indent=2)
+            print(f"✅ Service baskets created: {baskets_output}")
 
-        return final_output
+        # ---------------------------------------------------------
+        # OPTIONAL: STEP 7 - Hebrew Translation (DISABLED by default)
+        # ---------------------------------------------------------
+        #
+        # אם תרצי להפעיל תרגום לעברית בעתיד:
+        # 1. הסירי את הסימנים # מראש כל שורה בבלוק הבא
+        # 2. ודאי שקובץ step7_translate.py קיים בתיקייה steps
+        # 3. ודאי ש־Ollama מותקן ועובד עם המודל aya-expanse
+        #
+        # print("\n" + "="*70)
+        # print("STEP 7: Hebrew Translation")
+        # print("-"*70)
+        #
+        # hebrew_output = model_dir / "Combined_Service_Baskets_HEB.json"
+        #
+        # print("▶️  Running translation to Hebrew...")
+        # translated_data = translate_service_baskets(baskets_data)
+        #
+        # if not translated_data:
+        #     print("❌ Hebrew translation failed — returning English only")
+        # else:
+        #     json.dump(translated_data,
+        #               open(hebrew_output, 'w', encoding='utf-8'),
+        #               ensure_ascii=False, indent=2)
+        #     print(f"✅ Hebrew translation saved to: {hebrew_output}")
+        #
+        # החזרה של קובץ עברי:
+        # return hebrew_output
+
+        # ---------------------------------------------------------
+        # STEP 7 disabled → return STEP 6 output
+        # ---------------------------------------------------------
+
+        print("\n" + "=" * 70)
+        print("🎉 PIPELINE COMPLETED SUCCESSFULLY (STEP 7 disabled)")
+        print("=" * 70)
+        print(f"English output: {baskets_output}")
+        print("=" * 70)
+
+        return baskets_output  # THIS MAKES PIPELINE SUCCEED
+
 
 def main():
     parser = argparse.ArgumentParser(
         description='Treatment Wizard - VIN Processing Pipeline',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python main.py WP0ZZZ976PL135008               # Normal mode (skip existing)
-  python main.py WP0ZZZ976PL135008 --force       # Force mode (regenerate all)
-  python main.py WP0ZZZ976PL135008 --base-path "C:\\custom"  # Custom base path
-"""
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
-    parser.add_argument('vin', type=str, help='Vehicle VIN number (17 characters)')
-    parser.add_argument('--force', action='store_true',
-                        help='Force regeneration of all files (even if they exist)')
+    parser.add_argument('vin', type=str)
+    parser.add_argument('--force', action='store_true')
     parser.add_argument('--base-path', type=str,
-                        default=r'C:\Users\MayPery\PycharmProjects\Kits\Cars',
-                        help='Base path to car database directory')
+                       default=r'C:\Users\MayPery\PycharmProjects\Kits\Cars')
 
     args = parser.parse_args()
 
-    # Validate VIN
     if len(args.vin) != 17:
-        print(f"❌ Error: VIN must be exactly 17 characters (got {len(args.vin)})")
+        print(f"❌ VIN must be exactly 17 characters (got {len(args.vin)})")
         sys.exit(1)
 
-    # Check base path exists
     base_path = Path(args.base_path)
     if not base_path.exists():
-        print(f"❌ Error: Base path does not exist: {base_path}")
+        print(f"❌ Base path does not exist: {base_path}")
         sys.exit(1)
 
-    # Run pipeline
     wizard = TreatmentWizard(args.base_path)
-
     try:
         result = wizard.run_pipeline(args.vin, force=args.force)
 
@@ -283,14 +276,12 @@ Examples:
             sys.exit(1)
 
     except KeyboardInterrupt:
-        print("\n\n⚠️  Pipeline interrupted by user")
+        print("\n⚠️ Pipeline interrupted by user")
         sys.exit(130)
-
     except Exception as e:
-        print(f"\n❌ Pipeline failed with error: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+        print(f"❌ Pipeline error: {e}")
+        raise
+
 
 if __name__ == "__main__":
     main()
