@@ -1,136 +1,58 @@
 {% extends 'vin_processor/base.html' %}
+{% load custom_filters %}
 
 {% block title %}תוצאות - {{ vin }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .header-info {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-    }
-    
-    .header-info h2 {
-        margin: 0;
-        font-size: 1.8em;
-    }
-    
-    .header-info p {
-        margin: 10px 0 0 0;
-        font-size: 1.2em;
-    }
-    
-    .tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #e0e0e0;
-        flex-wrap: wrap;
-    }
-    
-    .tab {
-        padding: 15px 25px;
-        background: white;
-        border: none;
-        cursor: pointer;
-        font-size: 1.1em;
-        border-radius: 8px 8px 0 0;
-        transition: all 0.3s;
-    }
-    
-    .tab:hover {
-        background: #f5f5f5;
-    }
-    
-    .tab.active {
-        background: #667eea;
-        color: white;
-    }
-    
-    .tab-content {
-        display: none;
-    }
-    
-    .tab-content.active {
-        display: block;
-        animation: fadeIn 0.3s;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    
-    th {
-        background: #667eea;
-        color: white;
-        padding: 15px;
-        text-align: right;
-        font-size: 1.1em;
-    }
-    
-    td {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    
-    tr:hover {
-        background: #f9f9f9;
-    }
-    
-    .service-info {
-        background: #f0f0f0;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    
-    .service-info strong {
-        font-size: 1.2em;
-        color: #667eea;
-    }
-    
-    .back-btn {
-        display: inline-block;
-        margin-top: 20px;
-        text-decoration: none;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="card">
-    <div class="header-info">
-        <h2>📋 תוצאות עבור VIN: {{ vin }}</h2>
-        <p><strong>דגם:</strong> {{ model }}</p>
-        <p><strong>קיבולת שמן:</strong> {{ oil_capacity }} ליטר</p>
+<div class="results-container">
+    <div class="results-header">
+        <div class="results-vin">VIN: {{ vin }}</div>
+
+        <div class="results-info">
+            <div class="info-item">
+                <div class="info-label">דגם הרכב</div>
+                <div class="info-value">{{ model }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">קיבולת שמן</div>
+                <div class="info-value">{{ oil_capacity }} ליטר</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">סה"כ טיפולים</div>
+                <div class="info-value">{{ services|length }}</div>
+            </div>
+        </div>
     </div>
-    
-    <div class="tabs">
+
+    <!-- Tabs -->
+    <div class="tabs-container">
         {% for km, service_data in services.items %}
-        <button class="tab {% if forloop.first %}active{% endif %}" 
-                onclick="showTab('tab{{ km }}')">
+        <button class="tab-button {% if forloop.first %}active{% endif %}"
+                onclick="showTab('{{ km }}', this)">
             {{ service_data.mileage_km|floatformat:0 }} ק"מ
         </button>
         {% endfor %}
     </div>
-    
+
+    <!-- Tab Contents -->
     {% for km, service_data in services.items %}
-    <div id="tab{{ km }}" class="tab-content {% if forloop.first %}active{% endif %}">
-        <div class="service-info">
-            <strong>טיפול מספר:</strong> {{ service_data.service_number }} | 
-            <strong>קילומטראז':</strong> {{ service_data.mileage_km|floatformat:0 }} ק"מ
+    <div id="tab-{{ km }}" class="tab-content {% if forloop.first %}active{% endif %}">
+        <div class="service-meta">
+            <div class="service-meta-item">
+                <span class="service-meta-label">טיפול מספר:</span>
+                <span class="service-meta-value">{{ service_data.service_number }}</span>
+            </div>
+            <div class="service-meta-item">
+                <span class="service-meta-label">קילומטראז':</span>
+                <span class="service-meta-value">{{ service_data.mileage_km|floatformat:0 }} ק"מ</span>
+            </div>
+            <div class="service-meta-item">
+                <span class="service-meta-label">סה"כ חלקים:</span>
+                <span class="service-meta-value">{{ service_data.matched_parts|length }}</span>
+            </div>
         </div>
-        
-        <table>
+
+        <table class="parts-table">
             <thead>
                 <tr>
                     <th>שורת שירות</th>
@@ -143,40 +65,38 @@
             <tbody>
                 {% for part in service_data.matched_parts %}
                 <tr>
-                    <td>{{ part.SERVICE_LINE }}</td>
-                    <td><strong>{{ part.PART_NUMBER }}</strong></td>
-                    <td>{{ part.DESCRIPTION }}</td>
-                    <td>{{ part.REMARK|default:"—" }}</td>
-                    <td>{{ part.QUANTITY }}</td>
+                    <td>{{ part|lookup:"SERVICE LINE" }}</td>
+                    <td class="part-number">{{ part|lookup:"PART NUMBER" }}</td>
+                    <td>{{ part|lookup:"DESCRIPTION" }}</td>
+                    <td>{{ part|lookup:"REMARK"|default:"—" }}</td>
+                    <td class="part-quantity">{{ part|lookup:"QUANTITY" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
     {% endfor %}
-    
-    <a href="{% url 'home' %}" class="back-btn btn">חזרה לדף הבית</a>
+
+    <a href="{% url 'home' %}" class="btn-back">← חזרה לדף הבית</a>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function showTab(tabId) {
+    function showTab(tabId, button) {
         // Hide all tabs
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active');
         });
-        
+
         // Remove active from all buttons
-        document.querySelectorAll('.tab').forEach(btn => {
+        document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
-        
+
         // Show selected tab
-        document.getElementById(tabId).classList.add('active');
-        
-        // Mark button as active
-        event.target.classList.add('active');
+        document.getElementById('tab-' + tabId).classList.add('active');
+        button.classList.add('active');
     }
 </script>
 {% endblock %}

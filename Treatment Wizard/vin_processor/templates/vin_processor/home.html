@@ -1,174 +1,158 @@
 {% extends 'vin_processor/base.html' %}
 
-{% block title %}הכנס מספר VIN{% endblock %}
-
-{% block extra_css %}
-<style>
-    .vin-input-group {
-        text-align: center;
-        margin: 40px 0;
-    }
-    
-    .vin-input {
-        width: 100%;
-        max-width: 400px;
-        padding: 15px;
-        font-size: 1.3em;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        text-align: center;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-    }
-    
-    .vin-input:focus {
-        outline: none;
-        border-color: #667eea;
-    }
-    
-    .progress-container {
-        display: none;
-        margin-top: 40px;
-    }
-    
-    .progress-bar {
-        width: 100%;
-        height: 30px;
-        background: #e0e0e0;
-        border-radius: 15px;
-        overflow: hidden;
-        position: relative;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        width: 0%;
-        transition: width 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-    }
-    
-    .progress-text {
-        text-align: center;
-        margin-top: 15px;
-        font-size: 1.1em;
-        color: #666;
-    }
-    
-    .error {
-        color: #dc3545;
-        text-align: center;
-        margin-top: 20px;
-        font-size: 1.1em;
-    }
-</style>
-{% endblock %}
+{% block title %}הכנס מספר VIN | Treatment Wizard{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1>🚗 Treatment Wizard</h1>
-    
-    <div class="vin-input-group">
-        <input 
-            type="text" 
-            id="vinInput" 
-            class="vin-input" 
-            placeholder="הכנס מספר VIN (17 תווים)"
-            maxlength="17"
-        >
-        <br><br>
-        <button id="startBtn" class="btn">התחל עיבוד</button>
-    </div>
-    
-    <div id="progressContainer" class="progress-container">
-        <div class="progress-bar">
-            <div id="progressFill" class="progress-fill">0%</div>
+<section class="hero-section">
+    <div class="hero-content">
+        <!-- הסרנו את hero-title וה-hero-subtitle -->
+
+        <div class="vin-card">
+            <input
+                type="text"
+                id="vinInput"
+                class="vin-input"
+                placeholder="הכנס מספר VIN"
+                maxlength="17"
+            >
+            <button id="startBtn" class="btn-primary">יצירת קיט טיפולים</button>
+
+            <div id="loadingContainer" class="loading-container">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loadingText">מאתחל מערכת...</div>
+                <div class="loading-percentage" id="loadingPercentage">0%</div>
+            </div>
+
+            <div id="errorMsg" class="error-message" style="display: none;"></div>
         </div>
-        <div id="progressText" class="progress-text">ממתין...</div>
     </div>
-    
-    <div id="errorMsg" class="error"></div>
-</div>
+</section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     const vinInput = document.getElementById('vinInput');
     const startBtn = document.getElementById('startBtn');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
+    const loadingContainer = document.getElementById('loadingContainer');
+    const loadingText = document.getElementById('loadingText');
+    const loadingPercentage = document.getElementById('loadingPercentage');
     const errorMsg = document.getElementById('errorMsg');
-    
+
+    const loadingSteps = [
+        'מאתחל מערכת...',
+        'זיהוי דגם מ-VIN...',
+        'חילוץ טיפולים מ-PDF...',
+        'סיווג שורות טיפול...',
+        'חילוץ חלקים מ-PET...',
+        'התאמת חלקים לשירותים...',
+        'יצירת סלי שירות...',
+        'מסיים עיבוד...'
+    ];
+
     startBtn.addEventListener('click', async () => {
         const vin = vinInput.value.trim().toUpperCase();
-        
+
         if (vin.length !== 17) {
-            errorMsg.textContent = 'מספר VIN חייב להיות בדיוק 17 תווים';
+            showError('מספר VIN חייב להיות בדיוק 17 תווים');
             return;
         }
-        
-        errorMsg.textContent = '';
+
+        hideError();
         startBtn.disabled = true;
         vinInput.disabled = true;
-        progressContainer.style.display = 'block';
-        
+        loadingContainer.classList.add('active');
+
         try {
             const formData = new FormData();
             formData.append('vin', vin);
-            
+
             const response = await fetch('/start/', {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': getCookie('csrftoken')
                 }
             });
-            
+
             const data = await response.json();
-            
+
             if (data.redirect) {
                 window.location.href = data.redirect;
                 return;
             }
-            
+
             if (data.task_id) {
                 pollProgress(data.task_id);
             }
         } catch (error) {
-            errorMsg.textContent = 'שגיאה בתקשורת עם השרת';
-            startBtn.disabled = false;
-            vinInput.disabled = false;
+            showError('שגיאה בתקשורת עם השרת');
+            resetForm();
         }
     });
-    
+
     function pollProgress(taskId) {
         const interval = setInterval(async () => {
             try {
                 const response = await fetch(`/progress/${taskId}/`);
                 const data = await response.json();
-                
-                progressFill.style.width = data.progress + '%';
-                progressFill.textContent = data.progress + '%';
-                progressText.textContent = data.current_step;
-                
+
+                // Slow down progress for effect (multiply by 0.8)
+                const adjustedProgress = Math.floor(data.progress * 0.8);
+
+                updateProgress(adjustedProgress, data.current_step);
+
                 if (data.status === 'COMPLETED') {
                     clearInterval(interval);
-                    window.location.href = `/results/${taskId}/`;
+                    updateProgress(100, 'הושלם בהצלחה!');
+                    setTimeout(() => {
+                        window.location.href = `/results/${taskId}/`;
+                    }, 1000);
                 } else if (data.status === 'FAILED') {
                     clearInterval(interval);
-                    errorMsg.textContent = 'שגיאה: ' + data.error_message;
-                    startBtn.disabled = false;
-                    vinInput.disabled = false;
+                    showError('שגיאה: ' + data.error_message);
+                    resetForm();
                 }
             } catch (error) {
                 console.error('Polling error:', error);
             }
-        }, 500);
+        }, 800);
+    }
+
+    function updateProgress(percentage, step) {
+        loadingPercentage.textContent = percentage + '%';
+
+        const stepIndex = Math.floor((percentage / 100) * (loadingSteps.length - 1));
+        loadingText.textContent = step || loadingSteps[stepIndex];
+    }
+
+    function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.style.display = 'block';
+    }
+
+    function hideError() {
+        errorMsg.style.display = 'none';
+    }
+
+    function resetForm() {
+        startBtn.disabled = false;
+        vinInput.disabled = false;
+        loadingContainer.classList.remove('active');
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 </script>
 {% endblock %}
