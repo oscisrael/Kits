@@ -1,0 +1,174 @@
+{% extends 'vin_processor/base.html' %}
+
+{% block title %}הכנס מספר VIN{% endblock %}
+
+{% block extra_css %}
+<style>
+    .vin-input-group {
+        text-align: center;
+        margin: 40px 0;
+    }
+    
+    .vin-input {
+        width: 100%;
+        max-width: 400px;
+        padding: 15px;
+        font-size: 1.3em;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        text-align: center;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    
+    .vin-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .progress-container {
+        display: none;
+        margin-top: 40px;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: #e0e0e0;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        width: 0%;
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .progress-text {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 1.1em;
+        color: #666;
+    }
+    
+    .error {
+        color: #dc3545;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 1.1em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>🚗 Treatment Wizard</h1>
+    
+    <div class="vin-input-group">
+        <input 
+            type="text" 
+            id="vinInput" 
+            class="vin-input" 
+            placeholder="הכנס מספר VIN (17 תווים)"
+            maxlength="17"
+        >
+        <br><br>
+        <button id="startBtn" class="btn">התחל עיבוד</button>
+    </div>
+    
+    <div id="progressContainer" class="progress-container">
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill">0%</div>
+        </div>
+        <div id="progressText" class="progress-text">ממתין...</div>
+    </div>
+    
+    <div id="errorMsg" class="error"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const vinInput = document.getElementById('vinInput');
+    const startBtn = document.getElementById('startBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const errorMsg = document.getElementById('errorMsg');
+    
+    startBtn.addEventListener('click', async () => {
+        const vin = vinInput.value.trim().toUpperCase();
+        
+        if (vin.length !== 17) {
+            errorMsg.textContent = 'מספר VIN חייב להיות בדיוק 17 תווים';
+            return;
+        }
+        
+        errorMsg.textContent = '';
+        startBtn.disabled = true;
+        vinInput.disabled = true;
+        progressContainer.style.display = 'block';
+        
+        try {
+            const formData = new FormData();
+            formData.append('vin', vin);
+            
+            const response = await fetch('/start/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+            
+            if (data.task_id) {
+                pollProgress(data.task_id);
+            }
+        } catch (error) {
+            errorMsg.textContent = 'שגיאה בתקשורת עם השרת';
+            startBtn.disabled = false;
+            vinInput.disabled = false;
+        }
+    });
+    
+    function pollProgress(taskId) {
+        const interval = setInterval(async () => {
+            try {
+                const response = await fetch(`/progress/${taskId}/`);
+                const data = await response.json();
+                
+                progressFill.style.width = data.progress + '%';
+                progressFill.textContent = data.progress + '%';
+                progressText.textContent = data.current_step;
+                
+                if (data.status === 'COMPLETED') {
+                    clearInterval(interval);
+                    window.location.href = `/results/${taskId}/`;
+                } else if (data.status === 'FAILED') {
+                    clearInterval(interval);
+                    errorMsg.textContent = 'שגיאה: ' + data.error_message;
+                    startBtn.disabled = false;
+                    vinInput.disabled = false;
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+        }, 500);
+    }
+</script>
+{% endblock %}

@@ -19,4 +19,4 @@ __pycache__/
 *.pdf
 *.json
 *.xlsx
-*.pkl
+smart_vin_decoder.pkl
