@@ -20,14 +20,14 @@ SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR / 'steps'))
 sys.path.insert(0, str(SCRIPT_DIR / 'foundation_codes'))
 
-from step1_detect_model import detect_model_from_vin
-from step2_extract_pdf import extract_treatments_from_pdfs
-from step3_classify import classify_treatment_lines
-from step4_extract_pet import extract_pet_lines
-from step5_match_parts import match_parts_to_services
-from step6_create_service_baskets import create_service_baskets
-# STEP 7 intentionally disabled
-# from step7_translate import translate_service_baskets
+from steps.step1_detect_model import detect_model_from_vin
+from steps.step2_extract_pdf import extract_treatments_from_pdfs
+from steps.step3_classify import classify_treatment_lines
+from steps.step4_extract_pet import extract_pet_lines
+from steps.step5_match_parts import match_parts_to_services
+from steps.step6_create_service_baskets import create_service_baskets
+from steps.step7_translate import translate_service_data
+
 
 
 class TreatmentWizard:
@@ -200,46 +200,39 @@ class TreatmentWizard:
                       ensure_ascii=False, indent=2)
             print(f"✅ Service baskets created: {baskets_output}")
 
-        # ---------------------------------------------------------
-        # OPTIONAL: STEP 7 - Hebrew Translation (DISABLED by default)
-        # ---------------------------------------------------------
-        #
-        # אם תרצי להפעיל תרגום לעברית בעתיד:
-        # 1. הסירי את הסימנים # מראש כל שורה בבלוק הבא
-        # 2. ודאי שקובץ step7_translate.py קיים בתיקייה steps
-        # 3. ודאי ש־Ollama מותקן ועובד עם המודל aya-expanse
-        #
-        # print("\n" + "="*70)
-        # print("STEP 7: Hebrew Translation")
-        # print("-"*70)
-        #
-        # hebrew_output = model_dir / "Combined_Service_Baskets_HEB.json"
-        #
-        # print("▶️  Running translation to Hebrew...")
-        # translated_data = translate_service_baskets(baskets_data)
-        #
-        # if not translated_data:
-        #     print("❌ Hebrew translation failed — returning English only")
-        # else:
-        #     json.dump(translated_data,
-        #               open(hebrew_output, 'w', encoding='utf-8'),
-        #               ensure_ascii=False, indent=2)
-        #     print(f"✅ Hebrew translation saved to: {hebrew_output}")
-        #
-        # החזרה של קובץ עברי:
-        # return hebrew_output
+        # ====== STEP 7: Hebrew Translation ======
+        # אחרי סיום יצירת service baskets (שלב 6)
+        print("\n" + "=" * 70)
+        print("STEP 7: Hebrew Translation")
+        print("-" * 70)
 
-        # ---------------------------------------------------------
-        # STEP 7 disabled → return STEP 6 output
-        # ---------------------------------------------------------
+        hebrew_output = model_dir / "Combined_Service_Baskets_HEB.json"
+
+        if hebrew_output.exists() and not force:
+            print(f"✅ Output already exists: {hebrew_output}")
+            print("⏭️ Skipping Step 7...")
+        else:
+            print("▶️ Running translation to Hebrew via ChatGPT...")
+            # טען את קובץ ה-json שנוצר בשלב 6
+            baskets_data = json.load(open(baskets_output, "r", encoding="utf-8"))
+
+            # קרא את הפונקציה עם הנתונים
+            translated_data = translate_service_data(baskets_data)
+
+            if not translated_data:
+                print("❌ Hebrew translation failed — returning English only")
+                return baskets_data
+
+            # שמור את הפלט לקובץ תרגום חדש
+            json.dump(translated_data, open(hebrew_output, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+            print(f"✅ Hebrew translation saved to: {hebrew_output}")
 
         print("\n" + "=" * 70)
-        print("🎉 PIPELINE COMPLETED SUCCESSFULLY (STEP 7 disabled)")
+        print("🎉 PIPELINE COMPLETED SUCCESSFULLY")
         print("=" * 70)
-        print(f"English output: {baskets_output}")
+        print(f"Hebrew output: {hebrew_output}")
         print("=" * 70)
-
-        return baskets_output  # THIS MAKES PIPELINE SUCCEED
+        return hebrew_output
 
 
 def main():

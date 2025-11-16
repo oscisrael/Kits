@@ -1,15 +1,14 @@
 """
 step3_classify.py
-
 Step 3: Classify treatment lines into PARTS vs INSPECTION/OPERATIONS
 
 INPUT: treatments_data (Dict from step 2 with services)
 OUTPUT: classified_data with each item marked as PARTS or INSPECTION
 
 Features:
-- Uses OpenAI ChatGPT API for classification
+- Uses Ollama API for classification
 - Global classification cache to avoid re-classifying same items
-- Validates OpenAI API key before starting
+- Validates Ollama is running before starting
 - Only classifies unique items per service
 - Supports original PDF headers
 - Force certain items to INSPECTION (e.g., "drain engine oil")
@@ -19,10 +18,10 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional, List, Tuple
 import json
+import subprocess
+import requests
 from collections import defaultdict
 from datetime import datetime
-import os
-from openai import OpenAI
 
 # Add foundation_codes to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'foundation_codes'))
@@ -30,29 +29,42 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'foundation_codes'))
 # Cache file location
 CACHE_FILE = Path(__file__).parent.parent / 'foundation_codes' / 'classification_cache.json'
 
-# Initialize OpenAI client
-client = OpenAI(
-    api_key="***REMOVED***"
-)
 
-def check_openai_configured() -> bool:
+def check_ollama_running() -> bool:
     """
-    Check if OpenAI API key is configured
+    Check if Ollama is running and accessible
 
     Returns:
-        True if API key is configured, False otherwise
+        True if Ollama is running, False otherwise
     """
-    api_key = "***REMOVED***"
+    try:
+        # Try to ping Ollama API
+        response = requests.get("http://localhost:11434/api/tags", timeout=2)
+        if response.status_code == 200:
+            print("✅ Ollama is running")
+            return True
+    except requests.exceptions.RequestException:
+        pass
 
-    if not api_key:
-        print("❌ OpenAI API key is not configured!")
-        print("   Please set OPENAI_API_KEY environment variable")
-        print("   Example (Windows): set OPENAI_API_KEY=your-key-here")
-        print("   Example (Linux/Mac): export OPENAI_API_KEY=your-key-here")
-        return False
+    # Try subprocess check
+    try:
+        result = subprocess.run(
+            ["ollama", "list"],
+            capture_output=True,
+            timeout=5,
+            text=True
+        )
+        if result.returncode == 0:
+            print("✅ Ollama is installed and accessible")
+            return True
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
 
-    print("✅ OpenAI API is configured")
-    return True
+    print("❌ Ollama is not running!")
+    print("   Please start Ollama before running classification")
+    print("   Run: ollama serve")
+    return False
+
 
 def load_cache() -> Dict:
     """
@@ -68,11 +80,12 @@ def load_cache() -> Dict:
             print(f"✅ Loaded cache with {len(cache)} entries from: {CACHE_FILE}")
             return cache
         except Exception as e:
-            print(f"⚠️ Failed to load cache: {e}")
+            print(f"⚠️  Failed to load cache: {e}")
             return {}
     else:
-        print(f"ℹ️ No cache file found, starting fresh")
+        print(f"ℹ️  No cache file found, starting fresh")
         return {}
+
 
 def save_cache(cache: Dict):
     """
@@ -87,7 +100,8 @@ def save_cache(cache: Dict):
             json.dump(cache, f, ensure_ascii=False, indent=2)
         print(f"✅ Saved cache with {len(cache)} entries to: {CACHE_FILE}")
     except Exception as e:
-        print(f"⚠️ Failed to save cache: {e}")
+        print(f"⚠️  Failed to save cache: {e}")
+
 
 def normalize_text(text: str) -> str:
     """
@@ -100,6 +114,7 @@ def normalize_text(text: str) -> str:
         Normalized lowercase text
     """
     return text.lower().strip()
+
 
 def should_force_inspection(text: str) -> bool:
     """
@@ -125,9 +140,10 @@ def should_force_inspection(text: str) -> bool:
 
     return False
 
-def classify_with_chatgpt(item: str, num_runs: int = 3) -> Tuple[str, float]:
+
+def classify_with_ollama(item: str, num_runs: int = 3) -> Tuple[str, float]:
     """
-    Classify a single item using ChatGPT with consistency-based confidence
+    Classify a single item using Ollama with consistency-based confidence
 
     Args:
         item: Text to classify
@@ -139,6 +155,7 @@ def classify_with_chatgpt(item: str, num_runs: int = 3) -> Tuple[str, float]:
         - confidence: 0.0 to 1.0
     """
     prompt = f"""Task: Classify the following car-service line into one of two categories:
+
 - PARTS: The line requires adding, replacing, filling, changing, renewing, installing, or topping up any physical part or fluid.
 - INSPECTION: The line describes checking, inspecting, testing, measuring, or examining something without necessarily replacing or adding anything.
 
@@ -156,31 +173,32 @@ Respond with ONLY one word: either PARTS or INSPECTION."""
 
     for _ in range(num_runs):
         try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",  # או "gpt-4" למודל מתקדם יותר
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,  # נמוך יותר לעקביות
-                max_tokens=10
+            response = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": "llama3.2",
+                    "prompt": prompt,
+                    "stream": False
+                },
+                timeout=30
             )
 
-            answer = response.choices[0].message.content.strip().upper()
+            if response.status_code == 200:
+                answer = response.json().get("response", "").strip().upper()
 
-            # Extract PARTS or INSPECTION from response
-            if "PARTS" in answer:
-                results.append("PARTS")
-            elif "INSPECTION" in answer:
-                results.append("INSPECTION")
+                # Extract PARTS or INSPECTION from response
+                if "PARTS" in answer:
+                    results.append("PARTS")
+                elif "INSPECTION" in answer:
+                    results.append("INSPECTION")
 
         except Exception as e:
-            print(f"   ⚠️ ChatGPT request failed: {e}")
+            print(f"   ⚠️  Ollama request failed: {e}")
             continue
 
-    # If all attempts failed, default to INSPECTION
     if not results:
-        print(f"   ⚠️ All classification attempts failed for: {item}")
-        return ("INSPECTION", 0.5)
+        print(f"   ⚠️  All classification attempts failed for: {item}")
+        return ("INSPECTION", 0.5)  # Default to INSPECTION with low confidence
 
     # Calculate confidence based on consistency
     parts_count = results.count("PARTS")
@@ -194,6 +212,7 @@ Respond with ONLY one word: either PARTS or INSPECTION."""
         confidence = inspection_count / len(results)
 
     return (category, confidence)
+
 
 def classify_unique_items(items: List[str], cache: Dict) -> Dict[str, Tuple[str, float]]:
     """
@@ -210,7 +229,7 @@ def classify_unique_items(items: List[str], cache: Dict) -> Dict[str, Tuple[str,
     results = {}
 
     cache_hits = 0
-    api_calls = 0
+    ollama_calls = 0
     forced_rules = 0
 
     for item in unique_items:
@@ -237,8 +256,8 @@ def classify_unique_items(items: List[str], cache: Dict) -> Dict[str, Tuple[str,
             results[item] = (category, confidence)
             cache_hits += 1
         else:
-            # Classify with ChatGPT
-            category, confidence = classify_with_chatgpt(item, num_runs=3)
+            # Classify with Ollama
+            category, confidence = classify_with_ollama(item, num_runs=3)
             results[item] = (category, confidence)
 
             # Update cache
@@ -248,15 +267,17 @@ def classify_unique_items(items: List[str], cache: Dict) -> Dict[str, Tuple[str,
                 'classified_at': datetime.now().isoformat()
             }
 
-            api_calls += 1
-            print(f"   [{api_calls}/{len(unique_items) - cache_hits - forced_rules}] {item[:50]}... → {category} ({confidence:.2f})")
+            ollama_calls += 1
+            print(
+                f"   [{ollama_calls}/{len(unique_items) - cache_hits - forced_rules}] {item[:50]}... → {category} ({confidence:.2f})")
 
     print(f"   ✅ Cache hits: {cache_hits}/{len(unique_items)}")
-    print(f"   🤖 ChatGPT classifications: {api_calls}/{len(unique_items)}")
+    print(f"   🤖 Ollama classifications: {ollama_calls}/{len(unique_items)}")
     if forced_rules > 0:
         print(f"   🔒 Forced rules: {forced_rules}/{len(unique_items)}")
 
     return results
+
 
 def classify_treatment_lines(treatments_data: Dict, model_description: str) -> Optional[Dict]:
     """
@@ -295,8 +316,8 @@ def classify_treatment_lines(treatments_data: Dict, model_description: str) -> O
 
     print(f"Classifying treatment lines for model: {model_description}")
 
-    # Check OpenAI API configuration
-    if not check_openai_configured():
+    # Check Ollama
+    if not check_ollama_running():
         return None
 
     # Load cache
@@ -339,7 +360,7 @@ def classify_treatment_lines(treatments_data: Dict, model_description: str) -> O
             all_items.extend(items)
 
         if not all_items:
-            print(f"   ⚠️ No items found for {service_key}")
+            print(f"   ⚠️  No items found for {service_key}")
             continue
 
         print(f"   Found {len(all_items)} items ({len(set(all_items))} unique)")
@@ -352,6 +373,7 @@ def classify_treatment_lines(treatments_data: Dict, model_description: str) -> O
         for model_name, items in items_dict.items():
             for item in items:
                 category, confidence = classifications.get(item, ("INSPECTION", 0.5))
+
                 classified_items.append({
                     "text": item,
                     "category": category,
@@ -381,9 +403,11 @@ def classify_treatment_lines(treatments_data: Dict, model_description: str) -> O
 
     return classified_data
 
+
 # Test function (for standalone testing)
 def _test():
     """Test the step with sample data"""
+
     # Sample input from step 2 (new format with original headers)
     sample_data = {
         "metadata": {
@@ -407,13 +431,14 @@ def _test():
     }
 
     print("=" * 70)
-    print("Testing Step 3: Classification with ChatGPT")
+    print("Testing Step 3: Classification")
     print("=" * 70)
 
     result = classify_treatment_lines(sample_data, "Panamera GTS")
 
     if result:
         print("\n✅ Classification successful!")
+
         # Save to test output
         output_path = Path("test_step3_output.json")
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -421,6 +446,7 @@ def _test():
         print(f"\n📄 Test output saved to: {output_path}")
     else:
         print("\n❌ Classification failed")
+
 
 if __name__ == "__main__":
     _test()

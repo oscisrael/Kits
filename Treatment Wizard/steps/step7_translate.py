@@ -1,273 +1,104 @@
-"""
-step7_translate.py – Clean Hebrew Translation with Ollama (Aya-Expanse)
-
-Fixes included:
-- Removes transliteration (Latin phonetic text)
-- Ensures ONLY Hebrew output
-- Removes any Latin characters if model inserts them
-- Safe Windows encoding behavior (no utf-8 issues)
-- Stronger translation prompt
-- Preserves placeholders correctly
-"""
-
-import json
+import os
 import re
+import json
 from pathlib import Path
-from typing import Dict, Any
-import subprocess
-import time
+from typing import Dict, Any, Tuple
+from openai import OpenAI
+from datetime import datetime
 
+client = OpenAI(
+    api_key="***REMOVED***"
+)
+CACHE_FILE = Path(__file__).parent / "translation_cache.json"
 
-# =========================
-# Key Translations
-# =========================
-
-KEY_TRANSLATIONS = {
-    'model': 'דגם',
-    'oil_capacity': 'קיבולת שמן מנוע',
-    'service_number': 'טיפול מספר',
-    'mileage_km': 'קילומטראז',
-    'matched_parts': 'רכיבים',
-    'SERVICE LINE': 'שורת טיפול',
-    'PART NUMBER': 'מק"ט',
-    'DESCRIPTION': 'תיאור החלק',
-    'REMARK': 'הערה',
-    'QUANTITY': 'כמות'
-}
-
-# Patterns to preserve exactly
-PRESERVE_PATTERNS = [
-    r'Porsche',
-    r'Exxon Mobil',
-    r'Mobil 1',
-    r'Standard C40',
-    r'ESC X4',
-    r'PDK',
-    r'\d+W[-\s]?\d+',
-    r'FFL-\d+',
-    r'\d+\.\d+\s*Ltr\.?',
-    r'Page:\s*\d+',
+# טקסטים מיוחדים שמחליפים את התרגום בתוכן הסוגריים
+SPECIAL_PATTERNS = [
+    re.compile(r"Change oil filter \(([^)]+)\)", re.IGNORECASE),
 ]
 
+def load_cache() -> Dict[str, str]:
+    if CACHE_FILE.exists():
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-# =========================
-# Helper Functions
-# =========================
+def save_cache(cache: Dict[str, str]) -> None:
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
 
-def run_ollama_safe(args, prompt, timeout=120):
-    """
-    Runs Ollama safely on Windows by reading raw bytes and decoding manually.
-    """
-    proc = subprocess.Popen(
-        args,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=False
-    )
+def extract_special_translation(text: str) -> str:
+    for pattern in SPECIAL_PATTERNS:
+        match = pattern.fullmatch(text)
+        if match:
+            return match.group(1).strip()
+    return None
 
-    try:
-        out, err = proc.communicate(prompt.encode('utf-8'), timeout=timeout)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        return None, "TIMEOUT"
+def translate_text(text: str, cache: Dict[str, str]) -> str:
+    # בדיקת cache קודם
+    if text in cache:
+        return cache[text]
 
-    # Decode manually to UTF-8, ignore bad bytes
-    out_decoded = out.decode("utf-8", errors="ignore")
-    err_decoded = err.decode("utf-8", errors="ignore")
+    # בדיקה אם יש תרגום מיוחד
+    special = extract_special_translation(text)
+    if special is not None:
+        cache[text] = special
+        return special
 
-    return out_decoded, err_decoded
-
-
-def clean_latin(text: str) -> str:
-    """
-    Remove any English letters or mixed Latin added by the model.
-    Ensures output is pure Hebrew + numbers + placeholders.
-    """
-    # Allow placeholders like __PRESERVE_0_1__
-    placeholder_pattern = r'__PRESERVE_\d+_\d+__'
-
-    # Temporarily protect placeholders
-    preserved = re.findall(placeholder_pattern, text)
-    for i, ph in enumerate(preserved):
-        text = text.replace(ph, f"__TEMP_PH_{i}__")
-
-    # Remove Latin characters a-zA-Z inside parentheses or outside
-    text = re.sub(r'\([^)]*[A-Za-z][^)]*\)', '', text)
-    text = re.sub(r'[A-Za-z]', '', text)
-
-    # Clean leftover empty parentheses
-    text = re.sub(r'\(\s*\)', '', text)
-
-    # Restore placeholders
-    for i, ph in enumerate(preserved):
-        text = text.replace(f"__TEMP_PH_{i}__", ph)
-
-    return text.strip()
-
-
-def check_ollama_running() -> bool:
-    """Check if Ollama is running."""
-    try:
-        result = subprocess.run(['ollama', 'list'], capture_output=True, text=True, timeout=15)
-        return result.returncode == 0
-    except:
-        return False
-
-
-def check_model_exists(model: str) -> bool:
-    """Check if model is installed."""
-    try:
-        result = subprocess.run(['ollama', 'list'], capture_output=True, text=True)
-        return model in result.stdout
-    except:
-        return False
-
-
-# =========================
-# Translation Core
-# =========================
-
-def translate_with_ollama(text: str, model: str = "aya-expanse") -> str:
-    if not text or text.strip() == "":
-        return text
-
-    if any('\u0590' <= c <= '\u05FF' for c in text):
-        return text
-
-    if text.strip().upper() == "NOT FOUND":
-        return "לא נמצא"
-
-    preserved = {}
-    temp = text
-    for i, pattern in enumerate(PRESERVE_PATTERNS):
-        for match in re.finditer(pattern, temp, re.IGNORECASE):
-            ph = f"__PRESERVE_{i}_{len(preserved)}__"
-            preserved[ph] = match.group()
-            temp = temp.replace(match.group(), ph, 1)
-
-    prompt = f"""
-Translate to Hebrew:
-
-Rules:
-- Only pure Hebrew words.
-- No transliteration.
-- No English.
-- No parentheses unless in source.
-- Keep placeholders unchanged.
-
-Text:
-{temp}
-
-Hebrew only:
-""".strip()
+    # פנייה ל-API לתרגום
+    prompt = f"Translate the following phrase to Hebrew, only the phrase:\n{text}\nHebrew only, without transliteration."
 
     try:
-        result = subprocess.run(
-            ["ollama", "run", model],
-            input=prompt,
-            capture_output=True,
-            timeout=90,
-            text=True,                   # decode automatically
-            encoding="utf-8",            # force utf-8
-            errors="ignore"              # ignore bad bytes
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            max_tokens=100,
         )
+        translation = response.choices[0].message.content.strip()
+        cache[text] = translation
+        return translation
+    except Exception as e:
+        print(f"⚠️ Translation error for '{text}': {e}")
+        return text  # במקרה של שגיאה מחזיר את הטקסט המקורי
 
-        if result.returncode != 0:
-            print("⚠️ Ollama returned error:", result.stderr)
-            return text
+def translate_service_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    cache = load_cache()
 
-        output = result.stdout.strip()
-
-        # Restore preserved items
-        for ph, original in preserved.items():
-            output = output.replace(ph, original)
-
-        # Remove any English
-        output = clean_latin(output)
-
-        return output
-
-    except subprocess.TimeoutExpired:
-        print("⚠️ Timeout translating:", text[:40])
-        return text
-
-
-# =========================
-# Recursive translation
-# =========================
-
-def translate_value(value: Any, key: str, model="aya-expanse") -> Any:
-    if isinstance(value, str):
-        if key == "PART NUMBER":
-            return value
-        return translate_with_ollama(value, model)
-
-    if isinstance(value, list):
-        return [translate_value(v, key, model) for v in value]
-
-    if isinstance(value, dict):
-        return translate_dict(value, model)
-
-    return value
-
-
-def translate_dict(data: Dict, model="aya-expanse") -> Dict:
-    result = {}
-    for key, value in data.items():
-
-        # Translate keys
-        heb_key = KEY_TRANSLATIONS.get(key, key)
-
-        # Special case for parts list
-        if key == "matched_parts" and isinstance(value, list):
-            result[heb_key] = [translate_dict(p, model) for p in value]
+    def recursive_translate(obj: Any) -> Any:
+        if isinstance(obj, dict):
+            new_obj = {}
+            for k, v in obj.items():
+                # רק עבור מפתח SERVICE LINE מתרגמים ערך (האם הוא מחרוזת)
+                if k == "SERVICE LINE" and isinstance(v, str):
+                    translated_val = translate_text(v, cache)
+                    new_obj["SERVICE LINE ORIGINAL"] = v
+                    new_obj[k] = translated_val
+                else:
+                    new_obj[k] = recursive_translate(v)
+            return new_obj
+        elif isinstance(obj, list):
+            return [recursive_translate(i) for i in obj]
         else:
-            result[heb_key] = translate_value(value, key, model)
-
-    return result
-
-
-# =========================
-# Main
-# =========================
-
-def translate_service_baskets(input_file: Path, output_file: Path, model="aya-expanse"):
-    print("="*70)
-    print("Step 7: Translate Service Baskets to Hebrew")
-    print("="*70)
-
-    if not check_ollama_running():
-        print("❌ Ollama is not running!")
-        return False
-
-    if not check_model_exists(model):
-        print(f"⚠️ Model {model} not found. Pulling...")
-        subprocess.run(['ollama', 'pull', model])
-
-    if not input_file.exists():
-        print(f"❌ Missing file: {input_file}")
-        return False
-
-    print(f"📄 Loading {input_file} ...")
-    data = json.load(open(input_file, encoding="utf-8"))
-    print(f"🔍 Found {len(data)} top-level keys")
-
-    print("🔄 Translating...")
-    start = time.time()
-    translated = translate_dict(data, model)
-    print(f"⏳ Finished in {time.time() - start:.1f}s")
-
-    print(f"💾 Saving → {output_file}")
-    json.dump(translated, open(output_file, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-
-    print("✅ Done!")
-    return True
+            return obj
+    translated = recursive_translate(data)
+    save_cache(cache)
+    return translated
 
 
 if __name__ == "__main__":
-    translate_service_baskets(
-        Path("Combined_Service_Baskets.json"),
-        Path("Combined_Service_Baskets_Hebrew.json"),
-        model="aya-expanse"
-    )
+    input_path = Path("Combined_Service_Baskets.json")
+    output_path = Path("Combined_Service_Baskets_HEB.json")
+
+    if not input_path.exists():
+        print(f"❌ קובץ הקלט חסר: {input_path}")
+        exit(1)
+
+    with open(input_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    translated_data = translate_service_data(data)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(translated_data, f, ensure_ascii=False, indent=2)
+
+    print(f"✅ תרגום הוצלח ושמור בקובץ: {output_path}")
