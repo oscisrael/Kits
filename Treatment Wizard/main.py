@@ -27,6 +27,7 @@ from steps.step4_extract_pet import extract_pet_lines
 from steps.step5_match_parts import match_parts_to_services
 from steps.step6_create_service_baskets import create_service_baskets
 from steps.step7_translate import translate_service_data
+from steps.step8_export_excel import export_service_baskets_to_excel
 
 
 
@@ -153,9 +154,9 @@ class TreatmentWizard:
             print(f"✅ PET extraction completed: {pet_output}")
 
         # ====== STEP 5: Match Parts to Services ======
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("STEP 5: Parts Matching")
-        print("-"*70)
+        print("-" * 70)
 
         service_lines_output = model_dir / "Service_lines_with_part_number.json"
 
@@ -165,16 +166,19 @@ class TreatmentWizard:
             service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
         else:
             print("▶️  Running parts matching...")
-            service_lines_data = match_parts_to_services(classified_data, pet_data, model_desc)
+            result_path = match_parts_to_services(
+                str(classified_output),  # path, NOT dict
+                str(pet_output),  # path, NOT dict
+                str(service_lines_output),
+                model_desc
+            )
 
-            if not service_lines_data:
+            if not result_path:
                 print("❌ Parts matching failed")
                 return None
 
-            json.dump(service_lines_data,
-                      open(service_lines_output, 'w', encoding='utf-8'),
-                      ensure_ascii=False, indent=2)
-            print(f"✅ Parts matching completed: {service_lines_output}")
+            service_lines_data = json.load(open(result_path, "r", encoding="utf-8"))
+            print(f"✅ Parts matching completed: {result_path}")
 
         # ====== STEP 6: Create Service Baskets ======
         print("\n" + "="*70)
@@ -227,12 +231,36 @@ class TreatmentWizard:
             json.dump(translated_data, open(hebrew_output, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
             print(f"✅ Hebrew translation saved to: {hebrew_output}")
 
+        # ====== STEP 8: Export Excel ======
+        print("\n" + "=" * 70)
+        print("STEP 8: Export Excel")
+        print("-" * 70)
+
+        try:
+            from steps.step8_export_excel import export_service_baskets_to_excel
+
+            excel_path = export_service_baskets_to_excel(
+                json_path=str(model_dir / "Combined_Service_Baskets_HEB.json"),
+                output_dir=str(model_dir),
+                model_code=model_info["model_code"]
+            )
+
+            print(f"📊 Excel exported: {excel_path}")
+        except Exception as e:
+            print(f"⚠️ Excel export failed: {e}")
+            excel_path = None
+
         print("\n" + "=" * 70)
         print("🎉 PIPELINE COMPLETED SUCCESSFULLY")
         print("=" * 70)
-        print(f"Hebrew output: {hebrew_output}")
+        print(f"JSON Hebrew output: {hebrew_output}")
+        print(f"Excel output: {excel_path if excel_path else 'FAILED'}")
         print("=" * 70)
-        return hebrew_output
+
+        return {
+            "json": hebrew_output,
+            "excel": excel_path
+        }
 
 
 def main():

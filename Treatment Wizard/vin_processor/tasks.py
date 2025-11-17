@@ -100,7 +100,7 @@ def process_vin_task(self, vin_id):
         vin_obj.current_step = 'התאמת חלקים לשירותים'
         vin_obj.save()
 
-        service_lines_output = model_dir / "Service_lines_with_partnumber.json"
+        service_lines_output = model_dir / "Service_lines_with_part_number.json"
         if service_lines_output.exists():
             service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
         else:
