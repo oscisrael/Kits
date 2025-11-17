@@ -23,6 +23,8 @@ from collections import defaultdict
 from datetime import datetime
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
 # Add foundation_codes to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'foundation_codes'))
@@ -30,9 +32,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'foundation_codes'))
 # Cache file location
 CACHE_FILE = Path(__file__).parent.parent / 'foundation_codes' / 'classification_cache.json'
 
+api_key = os.getenv("OPENAI_API_KEY")
+
 # Initialize OpenAI client
 client = OpenAI(
-    api_key="***REMOVED***"
+    api_key=api_key
 )
 
 def check_openai_configured() -> bool:

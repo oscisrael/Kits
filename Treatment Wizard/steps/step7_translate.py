@@ -22,8 +22,9 @@ import os
 import re
 from pathlib import Path
 from typing import Any, Dict
-
+from dotenv import load_dotenv
 from openai import OpenAI
+load_dotenv()
 
 # -------------------------------
 # Config
@@ -31,9 +32,10 @@ from openai import OpenAI
 MODEL_GPT = "gpt-4.1-mini"
 INPUT_PATH = Path("Combined_Service_Baskets.json")
 OUTPUT_PATH = Path("Combined_Service_Baskets_HEB.json")
+api_key = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(
-    api_key="***REMOVED***"
+   api_key=api_key
 )
 # -------------------------------
 # Translation override rules (by English SERVICE LINE)

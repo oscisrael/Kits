@@ -20,3 +20,9 @@ __pycache__/
 *.json
 *.xlsx
 smart_vin_decoder.pkl
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
