@@ -166,19 +166,28 @@ class TreatmentWizard:
             service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
         else:
             print("▶️  Running parts matching...")
-            result_path = match_parts_to_services(
-                str(classified_output),  # path, NOT dict
-                str(pet_output),  # path, NOT dict
-                str(service_lines_output),
-                model_desc
+
+            # טען את הנתונים מהקבצים
+            classified_data = json.load(open(classified_output, 'r', encoding='utf-8'))
+            pet_data = json.load(open(pet_output, 'r', encoding='utf-8'))
+
+            # קרא לפונקציה עם 3 ארגומנטים בלבד (Dict, List[Dict], str)
+            result = match_parts_to_services(
+                classified_data,  # Dict - הנתונים המסווגים
+                pet_data,  # List[Dict] - נתוני PET
+                model_desc  # str - תיאור המודל
             )
 
-            if not result_path:
+            if not result:
                 print("❌ Parts matching failed")
                 return None
 
-            service_lines_data = json.load(open(result_path, "r", encoding="utf-8"))
-            print(f"✅ Parts matching completed: {result_path}")
+            # שמור את התוצאה לקובץ
+            with open(service_lines_output, 'w', encoding='utf-8') as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+
+            service_lines_data = result
+            print(f"✅ Parts matching completed: {service_lines_output}")
 
         # ====== STEP 6: Create Service Baskets ======
         print("\n" + "="*70)

@@ -42,11 +42,6 @@ client = OpenAI(
 # -------------------------------
 # סדר חשוב – הרגולר אקספרשנים נבדקים לפי הסדר
 TRANSLATION_RULES = [
-    # כללים ספציפיים לפקק/שייבה אגן שמן – חייבים לבוא לפני הכלל הכללי של change oil filter
-    (re.compile(r"change oil filter.*פקק אגן שמן", re.IGNORECASE), "פקק לאגן שמן"),
-    (re.compile(r"change oil filter.*שייבה אגן שמן", re.IGNORECASE), "שייבה לאגן שמן"),
-    (re.compile(r"change oil filter.*שייבה לאגן שמן", re.IGNORECASE), "שייבה לאגן שמן"),  # גיבוי
-
     # כללים כלליים לפי הטקסט האנגלי
     (re.compile(r"replace spark plugs", re.IGNORECASE), "מצתים"),
     (re.compile(r"pdk.*change oil", re.IGNORECASE), "שמן גיר PDK"),
@@ -191,12 +186,13 @@ def hebrew_from_description(description: str) -> str | None:
 # -------------------------------
 # Main translation logic per line
 # -------------------------------
-def translate_value(service_line_original: str, description: str = "") -> str:
+def translate_value(service_line_original: str, description: str = "", part_number: str = "") -> str:
     """
     Decide how to translate a given line:
     0. Try DESCRIPTION-based rule (from PET).
-    1. Then try predefined rules by English SERVICE LINE.
-    2. If no rule → GPT translation + cleanup.
+    1. Check specific cases by DESCRIPTION or PART NUMBER.
+    2. Then try predefined rules by English SERVICE LINE.
+    3. If no rule → GPT translation + cleanup.
     """
     if not isinstance(service_line_original, str):
         return ""
@@ -208,16 +204,28 @@ def translate_value(service_line_original: str, description: str = "") -> str:
     if desc_based:
         return desc_based
 
-    # 1) rules first (by English service line)
+    # 1) זיהוי ספציפי לפי DESCRIPTION - זה החלק החשוב!
+    desc_lower = (description or "").lower()
+
+    # אם זה "Change oil filter" - צריך לבדוק מה זה בדיוק לפי DESCRIPTION
+    if "change oil filter" in original.lower():
+        if "drain plug" in desc_lower or "oil drain plug" in desc_lower:
+            return "פקק לאגן שמן"
+        elif "drain washer" in desc_lower or "washer" in desc_lower or "sealing ring" in desc_lower:
+            return "שייבה לאגן שמן"
+        elif "oil filter" in desc_lower:
+            return "מסנן שמן"
+
+    # 2) rules (by English service line)
     rule_match = apply_translation_rules(original)
     if rule_match:
         return rule_match
 
-    # 2) cache
+    # 3) cache
     if original in TRANSLATION_CACHE:
         return TRANSLATION_CACHE[original]
 
-    # 3) GPT
+    # 4) GPT
     heb = translate_with_gpt(original)
     TRANSLATION_CACHE[original] = heb
     return heb
@@ -243,15 +251,15 @@ def translate_service_data(data: Dict[str, Any]) -> Dict[str, Any]:
                 if k == "SERVICE LINE" and isinstance(v, str):
                     original = obj.get("SERVICE LINE ORIGINAL", v)
                     description = obj.get("DESCRIPTION", "")
-                    hebrew = translate_value(original, description)
-
+                    part_number = obj.get("PART NUMBER", "")  # הוסף שורה זו
+                    hebrew = translate_value(original, description, part_number)  # עדכן את הקריאה
                     new_obj["SERVICE LINE ORIGINAL"] = original
                     new_obj["SERVICE LINE"] = hebrew
-
                     # לשמר גם את שאר השדות (PART NUMBER, QUANTITY וכו')
                     for kk, vv in obj.items():
                         if kk not in ("SERVICE LINE", "SERVICE LINE ORIGINAL"):
                             new_obj[kk] = recursive(vv)
+
                 else:
                     new_obj[k] = recursive(v)
             return new_obj
