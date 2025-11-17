@@ -117,6 +117,8 @@ def should_force_inspection(text: str) -> bool:
     force_inspection_keywords = [
         "drain engine oil",
         "drain oil",
+        "lubricate",
+        "grease",
     ]
 
     for keyword in force_inspection_keywords:

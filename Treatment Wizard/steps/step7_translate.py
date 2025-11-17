@@ -1,88 +1,94 @@
+"""
+STEP 7: Hebrew Translation (Part name only, no action verbs)
+Fully revised according to new translation rules.
+
+This script reads Combined_Service_Baskets.json and creates
+Combined_Service_Baskets_HEB.json with:
+  SERVICE LINE ORIGINAL
+  SERVICE LINE (Hebrew short part name only)
+
+Author: ChatGPT
+"""
+
 import os
-import re
 import json
+import re
 from pathlib import Path
-from typing import Dict, Any, Tuple
-from openai import OpenAI
-from datetime import datetime
+from typing import Dict, Any
 
-client = OpenAI(
-    api_key="***REMOVED***"
-)
-CACHE_FILE = Path(__file__).parent / "translation_cache.json"
 
-# טקסטים מיוחדים שמחליפים את התרגום בתוכן הסוגריים
-SPECIAL_PATTERNS = [
-    re.compile(r"Change oil filter \(([^)]+)\)", re.IGNORECASE),
+# Translation overrides (exact text or partial match rules)
+TRANSLATION_RULES = [
+    (re.compile(r"replace spark plugs", re.IGNORECASE), "מצתים"),
+    (re.compile(r"pdk.*change oil", re.IGNORECASE), "שמן גיר PDK"),
+    (re.compile(r"all-wheel final drive.*change oil", re.IGNORECASE), "שמן דיפרנציאלי"),
+    (re.compile(r"rear final drive.*change oil", re.IGNORECASE), "שמן סרן"),
+    (re.compile(r"change oil filter", re.IGNORECASE), "מסנן שמן"),
+    (re.compile(r"fill in engine oil", re.IGNORECASE), "שמן מנוע"),
+    (re.compile(r"particle filter.*replace filter element", re.IGNORECASE), "מסנן חלקיקים למזגן"),
+    (re.compile(r"change brake fluid", re.IGNORECASE), "נוזל בלמים"),
 ]
 
-def load_cache() -> Dict[str, str]:
-    if CACHE_FILE.exists():
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
 
-def save_cache(cache: Dict[str, str]) -> None:
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+def apply_translation_rules(text: str) -> str:
+    """ Return translated part name according to rules """
+    for pattern, hebrew in TRANSLATION_RULES:
+        if pattern.search(text):
+            return hebrew
 
-def extract_special_translation(text: str) -> str:
-    for pattern in SPECIAL_PATTERNS:
-        match = pattern.fullmatch(text)
-        if match:
-            return match.group(1).strip()
-    return None
+    return None  # fallback later
 
-def translate_text(text: str, cache: Dict[str, str]) -> str:
-    # בדיקת cache קודם
-    if text in cache:
-        return cache[text]
 
-    # בדיקה אם יש תרגום מיוחד
-    special = extract_special_translation(text)
-    if special is not None:
-        cache[text] = special
-        return special
+def fallback_trim_translation(text: str) -> str:
+    """
+    If no rule matched, extract component name without action verb.
+    Example:
+      'Lubricate door arrester and fastening bolts' → 'door arrester and fastening bolts'
+    """
+    # Remove common English action verbs
+    cleaned = re.sub(
+        r"\b(change|replace|fill in|lubricate|use|inspect|check|tighten|install|remove)\b",
+        "",
+        text,
+        flags=re.IGNORECASE
+    )
+    cleaned = cleaned.replace(":", " ").strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned
 
-    # פנייה ל-API לתרגום
-    prompt = f"Translate the following phrase to Hebrew, only the phrase:\n{text}\nHebrew only, without transliteration."
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,
-            max_tokens=100,
-        )
-        translation = response.choices[0].message.content.strip()
-        cache[text] = translation
-        return translation
-    except Exception as e:
-        print(f"⚠️ Translation error for '{text}': {e}")
-        return text  # במקרה של שגיאה מחזיר את הטקסט המקורי
+def translate_value(original: str) -> str:
+    """ Main translation logic """
+
+    # 1) Try direct rule match
+    rule_match = apply_translation_rules(original)
+    if rule_match:
+        return rule_match
+
+    # 2) Fallback to generic component extraction
+    return fallback_trim_translation(original)
+
 
 def translate_service_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    cache = load_cache()
+    """ Traverse recursively and translate only SERVICE LINE values """
 
-    def recursive_translate(obj: Any) -> Any:
+    def recursive(obj: Any) -> Any:
         if isinstance(obj, dict):
             new_obj = {}
             for k, v in obj.items():
-                # רק עבור מפתח SERVICE LINE מתרגמים ערך (האם הוא מחרוזת)
                 if k == "SERVICE LINE" and isinstance(v, str):
-                    translated_val = translate_text(v, cache)
                     new_obj["SERVICE LINE ORIGINAL"] = v
-                    new_obj[k] = translated_val
+                    new_obj[k] = translate_value(v)
                 else:
-                    new_obj[k] = recursive_translate(v)
+                    new_obj[k] = recursive(v)
             return new_obj
+
         elif isinstance(obj, list):
-            return [recursive_translate(i) for i in obj]
-        else:
-            return obj
-    translated = recursive_translate(data)
-    save_cache(cache)
-    return translated
+            return [recursive(item) for item in obj]
+
+        return obj
+
+    return recursive(data)
 
 
 if __name__ == "__main__":
@@ -101,4 +107,4 @@ if __name__ == "__main__":
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(translated_data, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ תרגום הוצלח ושמור בקובץ: {output_path}")
+    print(f"✅ תרגום בוצע בהצלחה → {output_path}")
