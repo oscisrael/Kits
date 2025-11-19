@@ -14,6 +14,8 @@ import sys
 import argparse
 from pathlib import Path
 import json
+import string
+import re
 
 # Add steps and foundation_codes to path
 SCRIPT_DIR = Path(__file__).parent
@@ -29,7 +31,29 @@ from steps.step6_create_service_baskets import create_service_baskets
 from steps.step7_translate import translate_service_data
 from steps.step8_export_excel import export_service_baskets_to_excel
 
+def normalize_model_name(name: str) -> str:
+    # מחליפה רצף של '/' עם רווחים סביבם ל'/'
+    name = re.sub(r'\s*/\s*', '/', name)
+    # מחליפה כמה '/' רצופים ל '/'
+    name = re.sub(r'/+', '/', name)
+    # מסירה רווחים בתחילת וסוף המחרוזת
+    name = name.strip()
+    return name
 
+def find_model_desc(data):
+    if isinstance(data, dict):
+        if "model" in data:
+            return data["model"]
+        for v in data.values():
+            found = find_model_desc(v)
+            if found:
+                return found
+    elif isinstance(data, list):
+        for item in data:
+            found = find_model_desc(item)
+            if found:
+                return found
+    return None
 
 class TreatmentWizard:
     """Main pipeline orchestrator"""
@@ -38,11 +62,6 @@ class TreatmentWizard:
         self.base_path = Path(base_path)
 
     def run_pipeline(self, vin: str, force: bool = False):
-        """
-        Run the complete pipeline for a given VIN.
-        STEP 7 disabled → Pipeline ends after STEP 6.
-        """
-
         print("="*70)
         print("🚗 Treatment Wizard - VIN Processing Pipeline")
         print("="*70)
@@ -101,8 +120,8 @@ class TreatmentWizard:
                 return None
 
             pdf_output.parent.mkdir(parents=True, exist_ok=True)
-            json.dump(treatments_data, open(pdf_output, 'w', encoding='utf-8'),
-                      ensure_ascii=False, indent=2)
+            with open(pdf_output, 'w', encoding='utf-8') as f:
+                json.dump(treatments_data, f, ensure_ascii=False, indent=2)
             print(f"✅ Extraction completed: {pdf_output}")
 
         # ====== STEP 3: Classify Treatment Lines ======
@@ -125,8 +144,8 @@ class TreatmentWizard:
                 return None
 
             classified_output.parent.mkdir(parents=True, exist_ok=True)
-            json.dump(classified_data, open(classified_output, 'w', encoding='utf-8'),
-                      ensure_ascii=False, indent=2)
+            with open(classified_output, 'w', encoding='utf-8') as f:
+                json.dump(classified_data, f, ensure_ascii=False, indent=2)
             print(f"✅ Classification completed: {classified_output}")
 
         # ====== STEP 4: Extract PET Lines ======
@@ -149,126 +168,191 @@ class TreatmentWizard:
                 return None
 
             pet_output.parent.mkdir(parents=True, exist_ok=True)
-            json.dump(pet_data, open(pet_output, 'w', encoding='utf-8'),
-                      ensure_ascii=False, indent=2)
+            with open(pet_output, 'w', encoding='utf-8') as f:
+                json.dump(pet_data, f, ensure_ascii=False, indent=2)
             print(f"✅ PET extraction completed: {pet_output}")
 
-        # ====== STEP 5: Match Parts to Services ======
+        # ====== STEP 5: Match Parts to Services with proper model_name normalization and filtering ======
         print("\n" + "=" * 70)
         print("STEP 5: Parts Matching")
         print("-" * 70)
 
-        service_lines_output = model_dir / "Service_lines_with_part_number.json"
+        def map_model_names_to_ids(model_names):
+            letters = string.ascii_uppercase
+            return {model: letters[i] for i, model in enumerate(sorted(model_names))}
 
-        if service_lines_output.exists() and not force:
-            print(f"✅ Output exists: {service_lines_output}")
-            print("⏭️  Skipping...")
-            service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
+        # Extract all normalized model_names found in items list
+        model_names = set()
+        for service_key, service_data in classified_data.get("services", {}).items():
+            items = service_data.get("items", [])
+            if isinstance(items, list):
+                for item in items:
+                    mn = item.get("model_name")
+                    if mn:
+                        model_names.add(normalize_model_name(mn))
+
+        service_lines_data = {}
+        model_id_map = {}
+
+        if len(model_names) < 2:
+            # Only one model_name - process as usual
+            service_lines_output = model_dir / "Service_lines_with_part_number.json"
+
+            if service_lines_output.exists() and not force:
+                print(f"✅ Output exists: {service_lines_output}")
+                print("⏭️  Skipping...")
+                service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
+            else:
+                print("▶️  Running parts matching on single model...")
+
+                result = match_parts_to_services(
+                    classified_data,
+                    pet_data,
+                    model_desc
+                )
+
+                if not result:
+                    print("❌ Parts matching failed")
+                    return None
+
+                with open(service_lines_output, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, ensure_ascii=False, indent=2)
+
+                service_lines_data['A'] = result
+                model_id_map[model_desc] = 'A'
+
+            print(f"✅ Parts matching completed for single model.")
         else:
-            print("▶️  Running parts matching...")
+            print(f"▶️ Multiple model_names detected: {model_names}")
+            model_id_map = map_model_names_to_ids(model_names)
 
-            # טען את הנתונים מהקבצים
-            classified_data = json.load(open(classified_output, 'r', encoding='utf-8'))
-            pet_data = json.load(open(pet_output, 'r', encoding='utf-8'))
+            for model_name, model_id in model_id_map.items():
+                print(f"▶️ Running parts matching for model '{model_name}' (ID {model_id})...")
 
-            # קרא לפונקציה עם 3 ארגומנטים בלבד (Dict, List[Dict], str)
-            result = match_parts_to_services(
-                classified_data,  # Dict - הנתונים המסווגים
-                pet_data,  # List[Dict] - נתוני PET
-                model_desc  # str - תיאור המודל
-            )
+                split_classified_data = {"services": {}}
 
-            if not result:
-                print("❌ Parts matching failed")
-                return None
+                for service_key, service_data in classified_data.get("services", {}).items():
+                    items = service_data.get("items", [])
+                    if isinstance(items, list):
+                        filtered_items = [
+                            item for item in items if normalize_model_name(item.get("model_name", "")) == model_name
+                        ]
+                        if filtered_items:
+                            split_classified_data["services"][service_key] = {
+                                "original_header": service_data.get("original_header", ""),
+                                "items": filtered_items
+                            }
 
-            # שמור את התוצאה לקובץ
-            with open(service_lines_output, 'w', encoding='utf-8') as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
+                result = match_parts_to_services(split_classified_data, pet_data, model_name)
 
-            service_lines_data = result
-            print(f"✅ Parts matching completed: {service_lines_output}")
+                if not result:
+                    print(f"❌ Parts matching failed for model {model_name}")
+                    continue
 
-        # ====== STEP 6: Create Service Baskets ======
+                output_file = model_dir / f"Service_lines_with_part_number_{model_id}.json"
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, ensure_ascii=False, indent=2)
+
+                service_lines_data[model_id] = result
+                print(f"✅ Parts matching completed for {model_name} saved to {output_file}")
+
+        # ====== STEP 6: Create Service Baskets for each model_id ======
         print("\n" + "="*70)
         print("STEP 6: Service Baskets Creation")
         print("-"*70)
 
-        baskets_output = model_dir / "Combined_Service_Baskets.json"
+        baskets_data_map = {}
+        for model_id, data in service_lines_data.items():
+            baskets_output = model_dir / f"Combined_Service_Baskets_{model_id}.json"
 
-        if baskets_output.exists() and not force:
-            print(f"✅ Output already exists: {baskets_output}")
-            print("⏭️  Skipping...")
-            baskets_data = json.load(open(baskets_output, 'r', encoding='utf-8'))
-        else:
-            print("▶️  Creating service baskets...")
-            baskets_data = create_service_baskets(service_lines_data)
+            if baskets_output.exists() and not force:
+                print(f"✅ Output already exists: {baskets_output}")
+                print("⏭️  Skipping...")
+                baskets_data = json.load(open(baskets_output, 'r', encoding='utf-8'))
+            else:
+                print(f"▶️  Creating service baskets for model ID {model_id} ...")
+                baskets_data = create_service_baskets(data)
 
-            if not baskets_data:
-                print("❌ Service basket creation failed")
-                return None
+                if not baskets_data:
+                    print("❌ Service basket creation failed")
+                    return None
 
-            json.dump(baskets_data,
-                      open(baskets_output, 'w', encoding='utf-8'),
-                      ensure_ascii=False, indent=2)
-            print(f"✅ Service baskets created: {baskets_output}")
+                with open(baskets_output, 'w', encoding='utf-8') as f:
+                    json.dump(baskets_data, f, ensure_ascii=False, indent=2)
+                print(f"✅ Service baskets created: {baskets_output}")
 
-        # ====== STEP 7: Hebrew Translation ======
-        # אחרי סיום יצירת service baskets (שלב 6)
-        print("\n" + "=" * 70)
+            baskets_data_map[model_id] = baskets_data
+
+        # ====== STEP 7: Hebrew Translation for each model_id ======
+        print("\n" + "="*70)
         print("STEP 7: Hebrew Translation")
-        print("-" * 70)
+        print("-"*70)
 
-        hebrew_output = model_dir / "Combined_Service_Baskets_HEB.json"
+        hebrew_outputs = {}
+        for model_id, baskets_data in baskets_data_map.items():
+            hebrew_output = model_dir / f"Combined_Service_Baskets_HEB_{model_id}.json"
 
-        if hebrew_output.exists() and not force:
-            print(f"✅ Output already exists: {hebrew_output}")
-            print("⏭️ Skipping Step 7...")
-        else:
-            print("▶️ Running translation to Hebrew via ChatGPT...")
-            # טען את קובץ ה-json שנוצר בשלב 6
-            baskets_data = json.load(open(baskets_output, "r", encoding="utf-8"))
+            if hebrew_output.exists() and not force:
+                print(f"✅ Output already exists: {hebrew_output}")
+                print("⏭️ Skipping Step 7...")
+            else:
+                print(f"▶️ Running translation to Hebrew for model ID {model_id} ...")
+                translated_data = translate_service_data(baskets_data)
 
-            # קרא את הפונקציה עם הנתונים
-            translated_data = translate_service_data(baskets_data)
+                if not translated_data:
+                    print("❌ Hebrew translation failed — returning English only")
+                    translated_data = baskets_data
 
-            if not translated_data:
-                print("❌ Hebrew translation failed — returning English only")
-                return baskets_data
+                with open(hebrew_output, "w", encoding="utf-8") as f:
+                    json.dump(translated_data, f, ensure_ascii=False, indent=2)
+                print(f"✅ Hebrew translation saved to: {hebrew_output}")
 
-            # שמור את הפלט לקובץ תרגום חדש
-            json.dump(translated_data, open(hebrew_output, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-            print(f"✅ Hebrew translation saved to: {hebrew_output}")
+            hebrew_outputs[model_id] = hebrew_output
 
-        # ====== STEP 8: Export Excel ======
+        # ====== STEP 8: Export Excel for each model_id ======
         print("\n" + "=" * 70)
         print("STEP 8: Export Excel")
         print("-" * 70)
 
-        try:
-            from steps.step8_export_excel import export_service_baskets_to_excel
+        excel_paths = {}
+        for model_id, hebrew_output in hebrew_outputs.items():
+            try:
+                baskets_data = baskets_data_map.get(model_id, {})
+                extracted_model_desc = find_model_desc(baskets_data)
 
-            excel_path = export_service_baskets_to_excel(
-                json_path=str(model_dir / "Combined_Service_Baskets_HEB.json"),
-                output_dir=str(model_dir),
-                model_code=model_info["model_code"]
-            )
+                print(f"  Model ID {model_id}: extracted_model_desc = {extracted_model_desc}")
+                print(f"  Multiple models? len(model_names) = {len(model_names)}")
 
-            print(f"📊 Excel exported: {excel_path}")
-        except Exception as e:
-            print(f"⚠️ Excel export failed: {e}")
-            excel_path = None
+                model_desc_param = extracted_model_desc if len(model_names) > 1 else None
 
-        print("\n" + "=" * 70)
+                excel_path = export_service_baskets_to_excel(
+                    json_path=str(hebrew_output),
+                    output_dir=str(model_dir),
+                    model_code=f"{model_code}_{model_id}",
+                    model_desc=model_desc_param
+                )
+                excel_paths[model_id] = excel_path
+                print(f"📊 Excel exported for model ID {model_id}: {excel_path}")
+            except Exception as e:
+                print(f"⚠️ Excel export failed for model ID {model_id}: {e}")
+                import traceback
+                traceback.print_exc()
+                excel_paths[model_id] = None
+
+        print("\n" + "="*70)
         print("🎉 PIPELINE COMPLETED SUCCESSFULLY")
-        print("=" * 70)
-        print(f"JSON Hebrew output: {hebrew_output}")
-        print(f"Excel output: {excel_path if excel_path else 'FAILED'}")
-        print("=" * 70)
+        print("="*70)
+        print("JSON Hebrew outputs:")
+        for k, v in hebrew_outputs.items():
+            print(f"  [{k}] {v}")
+        print("Excel outputs:")
+        for k, v in excel_paths.items():
+            print(f"  [{k}] {v if v else 'FAILED'}")
+        print("="*70)
 
         return {
-            "json": hebrew_output,
-            "excel": excel_path
+            "json": hebrew_outputs,
+            "excel": excel_paths
         }
 
 

@@ -16,15 +16,15 @@ def format_km(num: int) -> str:
 # ==========================
 EXTRA_PARTS = [
     {"חלקים": "תוסף דלק פורשה", "מק\"ט": "00004320902", "כמות": "1"},
-    {"חלקים": "נוזל שמשות",      "מק\"ט": "T.110",       "כמות": "1"},
-    {"חלקים": "חומרי עזר",        "מק\"ט": "1111",        "כמות": "1"},
+    {"חלקים": "נוזל שמשות", "מק\"ט": "T.110", "כמות": "1"},
+    {"חלקים": "חומרי עזר", "מק\"ט": "1111", "כמות": "1"},
 ]
 
 
 # ==========================
 # Main Export Function
 # ==========================
-def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code: str):
+def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code: str, model_desc: str = None):
     json_path = Path(json_path)
     output_dir = Path(output_dir)
 
@@ -43,22 +43,30 @@ def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code:
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Model header will use model_code instead of model name
-    model_header_text = f"model: {model_code}"
-
     # Initialize writer
     writer = pd.ExcelWriter(excel_path, engine="xlsxwriter")
     writer.book.use_zip64()  # safer for larger files
 
     # Create worksheet RTL
     writer.book.add_format()
-    df_model = pd.DataFrame([{"model": model_header_text}])
-    df_model.to_excel(writer, sheet_name="טיפולים", index=False, startrow=0)
+    print(f"***********model desc {model_desc}")
+    # Build header based on whether model_desc is provided
+    if model_desc:
+        # Multiple models case - show both model_code and model_desc
+        df_model = pd.DataFrame([
+            {"Header": f"Model Code: {model_code}"},
+            {"Header": f"Model: {model_desc}"}
+        ])
+    else:
+        # Single model case - show only model_code
+        df_model = pd.DataFrame([{"Header": f"model: {model_code}"}])
+
+    df_model.to_excel(writer, sheet_name="טיפולים", index=False, startrow=0, header=False)
 
     worksheet = writer.sheets["טיפולים"]
     worksheet.right_to_left()  # <--- RTL ENABLED
 
-    row_position = 3
+    row_position = 3 if not model_desc else 4  # Extra row if model_desc present
 
     # Iterate over treatment blocks
     for key, block in data.items():

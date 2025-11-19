@@ -34,13 +34,13 @@ def find_pet_file(pet_dir: Path) -> Optional[Path]:
 
     # Search for PDF containing "PET FILE" (case-insensitive)
     for pdf_file in pet_dir.glob("*.pdf"):
-        if "pet file" in pdf_file.name.lower():
-            return pdf_file
+        #if "pet file" in pdf_file.name.lower():
+        return pdf_file
 
-    # If not found, try without space
-    for pdf_file in pet_dir.glob("*.pdf"):
-        if "petfile" in pdf_file.name.lower():
-            return pdf_file
+    # # If not found, try without space
+    # for pdf_file in pet_dir.glob("*.pdf"):
+    #     if "petfile" in pdf_file.name.lower():
+    #         return pdf_file
 
     return None
 
