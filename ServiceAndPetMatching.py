@@ -129,12 +129,16 @@ def apply_special_matching_rules(service_line: str, pet_rows: list, model_name: 
     מיישם כללי התאמה מיוחדים לפי דגם ותיאור השורה
     מחזיר רשימה של התאמות או None
     """
+    print("apply special rules entered")
     service_clean = clean(service_line)
     model_upper = model_name.upper()
 
     # זיהוי אם מדובר ב-PANAMERA או CAYENNE
     is_panamera = "PANAMERA" in model_upper
     is_cayenne = "CAYENNE" in model_upper
+
+    print(f"SERVICE_CLEAN - {service_clean}, lower - {service_clean.lower()}")
+    print(f" model name - {model_name}, is_cayenne - {is_cayenne}, is_panamera - {is_panamera}")
 
     # כלל מיוחד: Fill in engine oil - בחירת הגירסה הגבוהה ביותר של X
     if "fill in engine oil" in service_clean or "fill engine oil" in service_clean:
@@ -166,6 +170,7 @@ def apply_special_matching_rules(service_line: str, pet_rows: list, model_name: 
                 "QUANTITY": quantity_str,
                 "CALCULATED_CAPACITY": oil_capacity  # שדה נוסף למעקב
             }]
+
 
     # כלל 1: עבור PANAMERA ו-CAYENNE - Change oil filter
     if (is_panamera or is_cayenne) and "change oil filter" in service_clean:
@@ -215,9 +220,9 @@ def apply_special_matching_rules(service_line: str, pet_rows: list, model_name: 
                 }]
 
     # כלל 3: עבור כל הדגמים - Particle filter: replace filter element
-    if "particle filter" in service_clean and "replace filter element" in service_clean:
+    if "particle filter" in service_clean.lower() and "replace filter element" in service_clean.lower():
         for row in pet_rows:
-            desc_clean = clean(row.get('Description', ''))
+            desc_clean = clean(row.get('Description', '')).lower()
             if ("odour" in desc_clean and "allergen" in desc_clean and "filter" in desc_clean) or \
                     ("odour and allergen filter" in desc_clean):
                 return [{
@@ -236,6 +241,7 @@ def best_pet_match(service_line: str, pet_rows: list, model_name: str = "", min_
     מחזיר את ההתאמה הטובה ביותר עם תמיכה בכללים מיוחדים
     """
     # בדיקה אם יש כלל מיוחד
+    print(f"besy pet match - service line = {service_line}\n model name {model_name}")
     special_match = apply_special_matching_rules(service_line, pet_rows, model_name)
     if special_match:
         return special_match

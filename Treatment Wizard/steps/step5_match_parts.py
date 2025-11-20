@@ -93,7 +93,7 @@ def get_service_keywords(service_line: str) -> List[str]:
         keywords.extend(["air", "filter", "engine", "intake"])
 
     if "cabin" in service_lower or "pollen" in service_lower or "particle filter" in service_lower:
-        keywords.extend(["cabin", "pollen", "filter", "dust", "microfilter"])
+        keywords.extend(["cabin", "pollen", "filter", "dust", "microfilter", "odour", "allergen"])
 
     if "spark" in service_lower and "plug" in service_lower:
         keywords.extend(["spark", "plug"])
@@ -152,8 +152,10 @@ def calculate_match_score_porsche(service_line: str, pet_part: Dict) -> float:
             penalty += 0.9  # Wrong filter type
 
     # CRITICAL RULE: Particle filter = Cabin/pollen/dust filter
+    # CRITICAL RULE: Particle filter = Cabin/pollen/dust filter
     if "particle filter" in service_norm or "cabin" in service_norm or "pollen" in service_norm:
-        if "cabin" in pet_norm or "pollen" in pet_norm or "dust" in pet_norm or "microfilter" in pet_norm:
+        if "cabin" in pet_norm or "pollen" in pet_norm or "dust" in pet_norm or "microfilter" in pet_norm or (
+                "odour" in pet_norm and "allergen" in pet_norm):
             boost += 0.6
         if "engine" in pet_norm and "air" in pet_norm and "cabin" not in pet_norm:
             penalty += 0.9  # Wrong filter type
@@ -249,6 +251,7 @@ def best_pet_match_porsche(service_line: str, pet_rows: List[Dict], model_name: 
         print(f"  ⚠️ No match found")
         return []
 
+
 def apply_special_rules(service_line: str, model_name: str, matches: List[Dict]) -> List[Dict]:
     service_lower = service_line.lower()
     model_lower = model_name.lower()
@@ -302,7 +305,25 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
                 print(f"  🔝 Selected HIGHEST X version: X{x_versions[0][0]}")
                 return [highest_x]
 
+    # Rule 3: Air cleaner - replace filter element
+    if "air cleaner" in service_lower and "replace filter element" in service_lower:
+        for match in matches:
+            desc_lower = match.get('description', '').lower()
+            if "air filter element" in desc_lower:
+                print(f"  🌬️ Matched air filter element")
+                return [match]
+
+    # Rule 4: Particle filter - replace filter element
+    if "particle filter" in service_lower and "replace filter element" in service_lower:
+        for match in matches:
+            desc_lower = match.get('description', '').lower()
+            if (("odour" in desc_lower and "allergen" in desc_lower and "filter" in desc_lower) or
+                    ("odour and allergen filter" in desc_lower)):
+                print(f"  🧼 Matched odour and allergen filter")
+                return [match]
+
     return matches[:1] if matches else []
+
 
 def match_parts_to_services(classified_data: Dict, pet_data: List[Dict], model_description: str) -> Optional[Dict]:
     if not classified_data or "services" not in classified_data:
