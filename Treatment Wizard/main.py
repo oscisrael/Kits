@@ -249,7 +249,8 @@ class TreatmentWizard:
                     print(f"❌ Parts matching failed for model {model_name}")
                     continue
 
-                output_file = model_dir / f"Service_lines_with_part_number_{model_id}.json"
+                output_file = model_dir / "Outputs" / "Service Lines" / f"Service_lines_with_part_number_{model_id}.json"
+                output_file.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_file, 'w', encoding='utf-8') as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
 
@@ -263,7 +264,8 @@ class TreatmentWizard:
 
         baskets_data_map = {}
         for model_id, data in service_lines_data.items():
-            baskets_output = model_dir / f"Combined_Service_Baskets_{model_id}.json"
+            baskets_output = model_dir / "Outputs" / "Service Baskets" / f"Combined_Service_Baskets_{model_id}.json"
+            baskets_output.parent.mkdir(parents=True, exist_ok=True)
 
             if baskets_output.exists() and not force:
                 print(f"✅ Output already exists: {baskets_output}")
@@ -290,7 +292,8 @@ class TreatmentWizard:
 
         hebrew_outputs = {}
         for model_id, baskets_data in baskets_data_map.items():
-            hebrew_output = model_dir / f"Combined_Service_Baskets_HEB_{model_id}.json"
+            hebrew_output = model_dir / "Outputs" / "Hebrew" / f"Combined_Service_Baskets_HEB_{model_id}.json"
+            hebrew_output.parent.mkdir(parents=True, exist_ok=True)
 
             if hebrew_output.exists() and not force:
                 print(f"✅ Output already exists: {hebrew_output}")
