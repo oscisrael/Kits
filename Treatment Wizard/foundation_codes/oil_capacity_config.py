@@ -23,16 +23,18 @@ OIL_CAPACITY_TABLE = {
         "Panamera 4S Hybrid": 6.8,
     },
     "Macan": {
-        "Macan GTS": 8.0,
-        "Macan Turbo": 8.0,
+        "Macan GTS": 7.5,
+        "Macan Turbo": 7.5,
         "Macan S": 7.5,
-        "Macan": 7.5,
+        "Macan": 5.2,
     },
     "Cayenne": {
-        "Cayenne Turbo": 9.0,
-        "Cayenne GTS": 8.5,
-        "Cayenne S": 8.0,
-        "Cayenne": 8.0,
+        "Cayenne E-Hybrid": 7.2,
+        "Cayenne Turbo": 9.5,
+        "Cayenne GTS": 9.5,
+        "Cayenne S": 9.5,
+        "Cayenne Turbo S Hybrid": 9.5,
+        "Cayenne": 7.6,
     },
     # Add more families as needed
 }
