@@ -216,6 +216,9 @@ def translate_value(service_line_original: str, description: str = "", part_numb
         elif "oil filter" in desc_lower:
             return "מסנן שמן"
 
+    if "פקק ריקון" in desc_lower:
+        return "פקק ריקון"
+
     # 2) rules (by English service line)
     rule_match = apply_translation_rules(original)
     if rule_match:
