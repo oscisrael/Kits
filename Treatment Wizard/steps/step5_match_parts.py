@@ -613,7 +613,7 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
     is_cayenne = 'cayenne' in model_lower
 
     # Rule 1: Oil filter for Panamera/Cayenne - add drain plug and washer
-    if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
+    if "change oil filter" in service_lower: #if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
         if matches:
             result = [matches[0]]
             result.append({
@@ -675,7 +675,34 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
                 print(f"  🧼 Matched odour and allergen filter")
                 return [match]
 
+    if is_panamera and "pdk transmission: change oil" in service_lower:
+        if matches:
+            result = [matches[0]]
+            result.append({
+                'part_number': 'PAF 008 973',
+                'description': 'פקק ריקון',  # כאן לוודא שהערך הוא בדיוק פקק ריקון
+                'remark': 'פקק ריקון',
+                'ill_no': '',
+                'quantity': '1',
+                'score': 1.0,
+                'is_addon': True,
+                'explanation': ''
+            })
+            return result
+        else:
+            return [{
+                'part_number': 'PAF 008 973',
+                'description': 'פקק ריקון',  # כנ"ל
+                'remark': 'פקק ריקון',
+                'ill_no': '',
+                'quantity': '1',
+                'score': 1.0,
+                'is_addon': True,
+                'explanation': ''
+            }]
+
     return matches[:1] if matches else []
+
 
 
 # ============================================================================

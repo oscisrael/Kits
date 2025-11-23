@@ -215,7 +215,7 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
     is_cayenne = 'cayenne' in model_lower
 
     # Rule 1: Oil filter for Panamera/Cayenne - add drain plug and washer
-    if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
+    if "change oil filter" in service_lower: #if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
         if matches:
             result = [matches[0]]
             result.append({
@@ -240,6 +240,33 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
             return result
         else:
             return matches
+
+        # Rule 1: Oil filter for Panamera/Cayenne - add drain plug and washer
+        if "change oil filter" in service_lower:  # if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
+            if matches:
+                result = [matches[0]]
+                result.append({
+                    'part_number': 'PAF911679',
+                    'description': 'Oil drain plug',
+                    'remark': 'פקק לאגן שמן',
+                    'ill_no': '',
+                    'quantity': '1',
+                    'score': 1.0,
+                    'is_addon': True
+                })
+                result.append({
+                    'part_number': 'PAF013849',
+                    'description': 'Oil drain washer',
+                    'remark': 'שייבה לאגן שמן',
+                    'ill_no': '',
+                    'quantity': '1',
+                    'score': 1.0,
+                    'is_addon': True
+                })
+                print(f"  🔧 Added oil drain plug + washer")
+                return result
+            else:
+                return matches
 
     # Rule 2: Engine oil - ALWAYS prefer HIGHEST X version
     if ('fill in' in service_lower and 'engine oil' in service_lower) or 'engine oil' in service_lower:

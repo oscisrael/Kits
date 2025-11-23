@@ -274,7 +274,7 @@ def _test():
     from pathlib import Path
 
     # Example: test with Panamera GTS
-    test_dir = Path(r"C:\Users\MayPery\PycharmProjects\Kits\Cars\Taycan\Y1AAA1")
+    test_dir = Path(r"C:\Users\MayPery\PycharmProjects\Kits\Cars\Panamera\97AAA1")
 
     if not test_dir.exists():
         print(f"❌ Test directory not found: {test_dir}")
