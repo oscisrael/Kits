@@ -122,9 +122,7 @@ def detect_model_from_vin(vin: str) -> Optional[Dict]:
 def _test():
     """Test the step with sample VINs"""
     test_vins = [
-        "WP0ZZZ976PL135008",  # Panamera GTS
-        "WP1ZZZXA6SL078845",  # Macan
-        "WP0ZZZYA3SL047443",  # Panamera 4 E-Hybrid
+        "WP0ZZZ97ZHL101783"
     ]
 
     print("=" * 70)

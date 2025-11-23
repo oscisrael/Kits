@@ -328,14 +328,20 @@ class TreatmentWizard:
 
                 model_desc_param = extracted_model_desc if len(model_names) > 1 else None
 
+                if len(model_names) > 1:
+                    model_code_param = f"{model_code}_{model_id}"
+                else:
+                    model_code_param = model_code
+
                 excel_path = export_service_baskets_to_excel(
                     json_path=str(hebrew_output),
                     output_dir=str(model_dir),
-                    model_code=f"{model_code}_{model_id}",
+                    model_code=model_code_param,  # <--- שונה
                     model_desc=model_desc_param
                 )
                 excel_paths[model_id] = excel_path
                 print(f"📊 Excel exported for model ID {model_id}: {excel_path}")
+
             except Exception as e:
                 print(f"⚠️ Excel export failed for model ID {model_id}: {e}")
                 import traceback
