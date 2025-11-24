@@ -246,7 +246,7 @@ Provide a clear, technical explanation in English."""
                     'description': best_part.get('Description', ''),
                     'remark': best_part.get('Remark', ''),
                     'ill_no': best_part.get('Ill-No.', ''),
-                    'quantity': best_part.get('Qty', '1'),
+                    'QUANTITY': best_part.get('Qty', '1'),
                     'score': semantic_score,
                     'match_method': 'semantic',
                     'hybrid_score': semantic_score,
@@ -572,7 +572,7 @@ def best_pet_match_porsche(service_line: str, pet_rows: List[Dict], model_name: 
                 'description': description,
                 'remark': remark,
                 'ill_no': ill_no,
-                'quantity': pet_row.get('Qty', '1'),
+                'QUANTITY': pet_row.get('Qty', '1'),
                 'score': score,
                 'original_pet_row': pet_row  # Keep for semantic matching
             })
@@ -613,7 +613,7 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
     is_cayenne = 'cayenne' in model_lower
 
     # Rule 1: Oil filter for Panamera/Cayenne - add drain plug and washer
-    if "change oil filter" in service_lower: #if (is_panamera or is_cayenne) and "change oil filter" in service_lower:
+    if "change oil filter" in service_lower:
         if matches:
             result = [matches[0]]
             result.append({
@@ -675,34 +675,27 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
                 print(f"  🧼 Matched odour and allergen filter")
                 return [match]
 
-    if is_panamera and "pdk transmission: change oil" in service_lower:
-        if matches:
-            result = [matches[0]]
-            result.append({
-                'part_number': 'PAF 008 973',
-                'description': 'פקק ריקון',  # כאן לוודא שהערך הוא בדיוק פקק ריקון
-                'remark': 'פקק ריקון',
-                'ill_no': '',
-                'quantity': '1',
-                'score': 1.0,
-                'is_addon': True,
-                'explanation': ''
-            })
-            return result
-        else:
-            return [{
-                'part_number': 'PAF 008 973',
-                'description': 'פקק ריקון',  # כנ"ל
-                'remark': 'פקק ריקון',
-                'ill_no': '',
-                'quantity': '1',
-                'score': 1.0,
-                'is_addon': True,
-                'explanation': ''
-            }]
+    # כלל חדש: PDK transmission oil – always use 9 liters for Panamera
+    if "pdk" in service_lower and "change oil" in service_lower:
+        for match in matches:
+            desc_lower = match.get('description', '').lower()
+            remark_lower = match.get('remark', '').lower()  # קריאה גם ל-REMARK
+            print(f"match \n {match}")
+            # בדיקה: נוזל גיר בתיאור, ו-FFL בתיאור או בהערה
+            if "transmission fluid" in desc_lower and ("ffl" in desc_lower or "ffl" in remark_lower):
+                print(f"entered if. desc_lower {desc_lower}")
+                print(f"return - \n service line {service_line}, \n part number {match.get('part_number', '').strip()},\n description |{match.get('description', '').strip()}")
+                return [{
+                    "SERVICE LINE": service_line,
+                    "part_number": match.get("part_number", "").strip(),
+                    "DESCRIPTION": match.get("description", "").strip(),
+                    "REMARK": match.get("remark", "").strip(),
+                    "QUANTITY": "9",  # הכמות הקבועה
+                    "MATCH SCORE": match.get('score', 1.0),  # שמירה על ציון
+                    "MATCH METHOD": "special_rule_pdk"  # לצורך דיבאג
+                }]
 
     return matches[:1] if matches else []
-
 
 
 # ============================================================================
@@ -773,15 +766,45 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
             matches = apply_special_rules(text, model_name, matches)
 
             quantity = "1"
+
+
             if "engine oil" in text.lower() or "fill in" in text.lower():
                 if oil_capacity:
                     quantity = str(oil_capacity)
 
+
+
             if matches:
                 for match in matches:
+                    desc_lower = match.get('description', '').lower()
+                    if "brake fluid" in desc_lower:
+                        match['quantity'] = '3'
+                        match['QUANTITY'] = '3'
+
+
                     is_addon = match.get('is_addon', False)
                     service_line_text = f"{text} ({match.get('remark', '')})" if is_addon else text
 
+                    # --- Lógica מתוקנת לחישוב כמות ---
+                    # 1. בדיקה אם הכלל המיוחד כבר קבע כמות (כמו ב-PDK שקבענו 9)
+                    special_rule_qty = match.get('QUANTITY') or match.get('quantity')
+                    final_qty = "1"
+
+                    if special_rule_qty and special_rule_qty != "1":
+                        # אם הכלל המיוחד החזיר כמות ספציפית (למשל 9) - נשתמש בה
+                        final_qty = special_rule_qty
+
+                    elif "engine oil" in text.lower() or "fill in" in text.lower():
+                        # אם זה שמן מנוע - נשתמש בקיבולת המחושבת
+                        final_qty = str(oil_capacity) if oil_capacity else "1"
+
+                    else:
+                        # אחרת, ברירת מחדל 1
+                        final_qty = "1"
+
+                    # -------------------------------------
+                    print(f"matchmatchnatch{match}")
+                    print(f"FFFFFmatch{match.get('part_number', 'NOT FOUND')}")
                     part_data = {
                         "SERVICE LINE": service_line_text,
                         "CATEGORY": category,
@@ -789,7 +812,7 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
                         "PART NUMBER": match.get('part_number', 'NOT FOUND'),
                         "DESCRIPTION": match.get('description', ''),
                         "REMARK": match.get('remark', ''),
-                        "QUANTITY": quantity if "oil" in text.lower() and not is_addon else match.get('quantity', '1'),
+                        "QUANTITY": final_qty,  # שימוש במשתנה המחושב החדש
                         "MATCH SCORE": round(match.get('hybrid_score', match.get('score', 0)), 3)
                     }
 

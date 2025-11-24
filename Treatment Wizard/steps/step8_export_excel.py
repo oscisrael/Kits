@@ -54,7 +54,7 @@ def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code:
     if model_desc:
         # Multiple models case - show both model_code and model_desc
         df_model = pd.DataFrame([
-            {"Header": f"Model Code: {model_code}"},
+            {"Header": model_code},
             {"Header": f"Model: {model_desc}"}
         ])
     else:

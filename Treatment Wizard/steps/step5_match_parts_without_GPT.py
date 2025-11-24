@@ -288,6 +288,14 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
                 print(f"  🔝 Selected HIGHEST X version: X{x_versions[0][0]}")
                 return [highest_x]
 
+    if is_panamera and "pdk transmission: change oil" in service_lower:
+        # מצאי את ההתאמה הרלוונטית של שמן הגיר (PDK)
+        for match in matches:
+            desc = match.get('description', '').lower()
+            if "transmission fluid" in desc or "pdk" in desc:
+                match['QUANTITY'] = '9'
+        return matches
+
     return matches[:1] if matches else []
 
 def match_parts_to_services(classified_data: Dict, pet_data: List[Dict], model_description: str) -> Optional[Dict]:
@@ -351,7 +359,8 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict], model_d
                         "PART NUMBER": match.get('part_number', 'NOT FOUND'),
                         "DESCRIPTION": match.get('description', ''),
                         "REMARK": match.get('remark', ''),
-                        "QUANTITY": quantity if "oil" in text.lower() and not is_addon else match.get('quantity', '1'),
+                        #"QUANTITY": quantity if "oil" in text.lower() and not is_addon else match.get('quantity', '1'),
+                        "QUANTITY": match.get('quantity', '1'),
                         "MATCH SCORE": round(match.get('score', 0), 3)
                     })
                 matched_parts += len(matches)

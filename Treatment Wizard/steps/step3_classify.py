@@ -126,6 +126,9 @@ def should_force_inspection(text: str) -> bool:
         "stickers",
         "Warning sticker",
         "replace missing stickers",
+        "All-wheel final drive: change oil",
+        "All-wheel",
+
     ]
 
     for keyword in force_inspection_keywords:
@@ -396,7 +399,7 @@ def _test():
     # Sample input from step 2 (new format with original headers)
     sample_data = {
         "metadata": {
-            "model_dir": "C:\\Users\\MayPery\\PycharmProjects\\Kits\\Cars\\Panamera\\97ADS1",
+            "model_dir": "Cayenne:\\Users\\MayPery\\PycharmProjects\\Kits\\Cars\\Panamera\\97ADS1",
             "oil_maintenance_pdf": "Oil maintenance.pdf"
         },
         "services": {

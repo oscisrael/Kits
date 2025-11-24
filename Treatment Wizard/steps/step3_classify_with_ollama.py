@@ -411,7 +411,7 @@ def _test():
     # Sample input from step 2 (new format with original headers)
     sample_data = {
         "metadata": {
-            "model_dir": "C:\\Users\\MayPery\\PycharmProjects\\Kits\\Cars\\Panamera\\97ADS1",
+            "model_dir": "Cayenne:\\Users\\MayPery\\PycharmProjects\\Kits\\Cars\\Panamera\\97ADS1",
             "oil_maintenance_pdf": "Oil maintenance.pdf"
         },
         "services": {

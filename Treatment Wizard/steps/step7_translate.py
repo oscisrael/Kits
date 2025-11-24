@@ -200,9 +200,9 @@ def translate_value(service_line_original: str, description: str = "", part_numb
     original = service_line_original.strip()
 
     # 0) ניסיון קודם כל לפי DESCRIPTION מה-PET
-    desc_based = hebrew_from_description(description or "")
-    if desc_based:
-        return desc_based
+    #desc_based = hebrew_from_description(description or "")
+    #if desc_based:
+    #    return desc_based
 
     # 1) זיהוי ספציפי לפי DESCRIPTION - זה החלק החשוב!
     desc_lower = (description or "").lower()
@@ -218,6 +218,15 @@ def translate_value(service_line_original: str, description: str = "", part_numb
 
     if "פקק ריקון" in desc_lower:
         return "פקק ריקון"
+
+
+    if "Particle filter: replace filter element" in original:
+        return "מסנן חלקיקים למזגן"
+
+    if "Air cleaner: replace filter element" in original:
+        return "מסנן אוויר למנוע"
+
+
 
     # 2) rules (by English service line)
     rule_match = apply_translation_rules(original)

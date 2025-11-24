@@ -7,7 +7,7 @@ Output: Combined_Service_Baskets.json  (STEP 7 disabled)
 Usage:
     python main.py WP0ZZZ976PL135008
     python main.py WP0ZZZ976PL135008 --force
-    python main.py WP0ZZZ976PL135008 --base-path "C:\\custom"
+    python main.py WP0ZZZ976PL135008 --base-path "Cayenne:\\custom"
 """
 
 import sys
@@ -58,7 +58,7 @@ def find_model_desc(data):
 class TreatmentWizard:
     """Main pipeline orchestrator"""
 
-    def __init__(self, base_path: str = r"C:\Users\MayPery\PycharmProjects\Kits\Cars"):
+    def __init__(self, base_path: str = r"Cayenne:\Users\MayPery\PycharmProjects\Kits\Cars"):
         self.base_path = Path(base_path)
 
     def run_pipeline(self, vin: str, force: bool = False):

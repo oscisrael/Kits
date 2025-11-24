@@ -39,7 +39,10 @@ def clean_part(part: Dict) -> Dict:
         'PART NUMBER': part.get('PART NUMBER', ''),
         'DESCRIPTION': part.get('DESCRIPTION', ''),
         'REMARK': part.get('REMARK', ''),
-        'QUANTITY': part.get('QUANTITY', '1')
+        #'QUANTITY': part.get('QUANTITY', '1')
+        #'QUANTITY': part.get('QUANTITY', part.get('quantity', '1'))
+        'QUANTITY': part.get('quantity', part.get('QUANTITY', '1'))
+
     }
 
 def remove_duplicate_parts(parts: List[Dict]) -> List[Dict]:
