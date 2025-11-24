@@ -34,15 +34,17 @@ def clean_part(part: Dict) -> Dict:
     Removes: CATEGORY, CONFIDENCE, MATCH SCORE
     Keeps: SERVICE LINE, PART NUMBER, DESCRIPTION, REMARK, QUANTITY
     """
+
+    raw_quantity = part.get('quantity', part.get('QUANTITY', '1'))
+    clean_quantity = raw_quantity.split(',')[0].strip()
+
     return {
         'SERVICE LINE': part.get('SERVICE LINE', ''),
         'PART NUMBER': part.get('PART NUMBER', ''),
         'DESCRIPTION': part.get('DESCRIPTION', ''),
         'REMARK': part.get('REMARK', ''),
-        #'QUANTITY': part.get('QUANTITY', '1')
-        #'QUANTITY': part.get('QUANTITY', part.get('quantity', '1'))
-        'QUANTITY': part.get('quantity', part.get('QUANTITY', '1'))
-
+        #'QUANTITY': part.get('quantity', part.get('QUANTITY', '1'))
+        'QUANTITY': clean_quantity
     }
 
 def remove_duplicate_parts(parts: List[Dict]) -> List[Dict]:

@@ -49,17 +49,20 @@ def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code:
 
     # Create worksheet RTL
     writer.book.add_format()
-    print(f"***********model desc {model_desc}")
+
     # Build header based on whether model_desc is provided
     if model_desc:
-        # Multiple models case - show both model_code and model_desc
+        # ניקוי model_code מחלק אחרי מקף תחתון אם קיים
+        cleaned_model_code = model_code.split('_')[0]  # לוקח רק את החלק שלפני _
         df_model = pd.DataFrame([
-            {"Header": model_code},
+            {"Header": cleaned_model_code},
             {"Header": f"Model: {model_desc}"}
         ])
     else:
-        # Single model case - show only model_code
-        df_model = pd.DataFrame([{"Header": f"model: {model_code}"}])
+        cleaned_model_code = model_code.split('_')[0]
+        df_model = pd.DataFrame([
+            {"Header": cleaned_model_code}
+        ])
 
     df_model.to_excel(writer, sheet_name="טיפולים", index=False, startrow=0, header=False)
 
