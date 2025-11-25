@@ -336,6 +336,7 @@ class TreatmentWizard:
                 excel_path = export_service_baskets_to_excel(
                     json_path=str(hebrew_output),
                     output_dir=str(model_dir),
+                    model_vin= vin,
                     model_code=model_code_param,  # <--- שונה
                     model_desc=model_desc_param
                 )

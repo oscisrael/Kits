@@ -64,6 +64,8 @@ def remove_duplicate_parts(parts: List[Dict]) -> List[Dict]:
 
     return unique_parts
 
+
+
 def create_service_baskets(service_lines_data: Dict) -> Optional[Dict]:
     """
     Create combined service baskets from individual service lines
@@ -141,8 +143,17 @@ def create_service_baskets(service_lines_data: Dict) -> Optional[Dict]:
 
             # Clean time-dependent parts before adding
             cleaned_time_parts = [clean_part(part) for part in time_parts]
-            all_parts.extend(cleaned_time_parts)
+            #all_parts.extend(cleaned_time_parts)
             print(f"  ✅ Including Time-dependent ({len(time_parts)} parts)")
+            brake_fluid_part = {
+                "SERVICE LINE": "Change brake fluid (use only original Porsche brake fluid)",
+                "PART NUMBER": "T.109",
+                "DESCRIPTION": "brake fluid",
+                "REMARK": "",
+                "QUANTITY": "3"
+            }
+            all_parts.append(brake_fluid_part)
+            print(f"  ✅ Manually added brake fluid (T103, 3) for even service #{service_number}")
 
         # Remove duplicates
         parts_before = len(all_parts)
@@ -162,6 +173,21 @@ def create_service_baskets(service_lines_data: Dict) -> Optional[Dict]:
 
         print(f"  📊 Final parts in basket: {parts_after} (from {parts_before} total)")
 
+    print(f"combined basket - {combined_baskets}")
+
+    # הוספת טיפול מלאכותי 75000 אחרי טיפול 60000 עם טיפול 15000
+    if '60000' in combined_baskets:
+        try:
+            combined_baskets['75000'] = combined_baskets['15000']
+            print("✅ Added artificial 75000 treatment based on 15000")
+        except KeyError:
+            print("⚠️ Treatment 15000 not found, cannot add 75000 artificially")
+    else:
+        print("⚠️ Treatment 60000 not found, cannot add artificial 75000")
+
+    # הסר טיפולים עם מפתח ק"מ מעל 120000
+    combined_baskets = {k: v for k, v in combined_baskets.items() if int(k) <= 120000}
+
     # Create final output with model/oil_capacity at TOP level
     # Services added directly to root (not under "services" key)
     final_output = {
@@ -169,12 +195,22 @@ def create_service_baskets(service_lines_data: Dict) -> Optional[Dict]:
         'oil_capacity': oil_capacity
     }
 
+    from collections import OrderedDict
+
+    combined_baskets_sorted = OrderedDict(
+        sorted(combined_baskets.items(), key=lambda kv: int(kv[0]))
+    )
+
+    # עדכן את final_output עם המילון המסודר
+    final_output.update(combined_baskets_sorted)
+
     # Add all services directly to root
     final_output.update(combined_baskets)
 
     print(f"\n✅ Created {len(combined_baskets)} service baskets")
 
     return final_output
+
 
 def _test():
     """Test the step with sample data"""

@@ -18,13 +18,14 @@ EXTRA_PARTS = [
     {"חלקים": "תוסף דלק פורשה", "מק\"ט": "00004320902", "כמות": "1"},
     {"חלקים": "נוזל שמשות", "מק\"ט": "T.110", "כמות": "1"},
     {"חלקים": "חומרי עזר", "מק\"ט": "1111", "כמות": "1"},
+    {"חלקים": "עבודה", "מק\"ט": "", "כמות": ""},
 ]
 
 
 # ==========================
 # Main Export Function
 # ==========================
-def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code: str, model_desc: str = None):
+def export_service_baskets_to_excel(json_path: str, output_dir: str, model_vin: str, model_code: str, model_desc: str = None):
     json_path = Path(json_path)
     output_dir = Path(output_dir)
 
@@ -36,7 +37,7 @@ def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code:
     excel_dir.mkdir(exist_ok=True)
 
     # Build output file path
-    excel_filename = f"{model_code} - Service Baskets.xlsx"
+    excel_filename = f"{model_code} - קיט טיפולים.xlsx"
     excel_path = excel_dir / excel_filename
 
     # Load JSON
@@ -55,8 +56,10 @@ def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code:
         # ניקוי model_code מחלק אחרי מקף תחתון אם קיים
         cleaned_model_code = model_code.split('_')[0]  # לוקח רק את החלק שלפני _
         df_model = pd.DataFrame([
-            {"Header": cleaned_model_code},
-            {"Header": f"Model: {model_desc}"}
+            {"Header": f"Model: {model_desc}"},
+            {"Header": model_vin},
+            {"Header": ""},
+            {"Header": cleaned_model_code}
         ])
     else:
         cleaned_model_code = model_code.split('_')[0]
@@ -97,7 +100,7 @@ def export_service_baskets_to_excel(json_path: str, output_dir: str, model_code:
 
         # Create DataFrame
         df = pd.DataFrame(rows)
-
+        df['מק"ט'] = df['מק"ט'].str.replace(' ', '', regex=False)
         # Write treatment title
         worksheet.write(row_position, 0, mileage_label)
         row_position += 1
