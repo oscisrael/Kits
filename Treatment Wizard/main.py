@@ -17,6 +17,18 @@ import json
 import string
 import re
 
+
+# <<<< הוסיפי את זה כאן >>>>
+import io
+import os
+
+# Fix Unicode encoding for Windows
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+
 # Add steps and foundation_codes to path
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR / 'steps'))
@@ -63,7 +75,7 @@ class TreatmentWizard:
 
     def run_pipeline(self, vin: str, force: bool = False):
         print("="*70)
-        print("🚗 Treatment Wizard - VIN Processing Pipeline")
+        print("Treatment Wizard - VIN Processing Pipeline")
         print("="*70)
         print(f"VIN: {vin}")
         print(f"Force mode: {'ON' if force else 'OFF'}")
@@ -77,7 +89,7 @@ class TreatmentWizard:
 
         model_info = detect_model_from_vin(vin)
         if not model_info or model_info['confidence'] == 0:
-            print(f"❌ Failed to decode VIN: {vin}")
+            print(f"Failed to decode VIN: {vin}")
             return None
 
         model_code = model_info['model_code']
@@ -95,7 +107,7 @@ class TreatmentWizard:
         model_dir = self.base_path / model_family / model_code
 
         if not model_dir.exists():
-            print(f"❌ Model directory not found: {model_dir}")
+            print(f"Model directory not found: {model_dir}")
             return None
 
         print(f"✅ Model directory found: {model_dir}")
@@ -116,13 +128,13 @@ class TreatmentWizard:
             treatments_data = extract_treatments_from_pdfs(model_dir)
 
             if not treatments_data:
-                print("❌ PDF extraction failed")
+                print("PDF extraction failed")
                 return None
 
             pdf_output.parent.mkdir(parents=True, exist_ok=True)
             with open(pdf_output, 'w', encoding='utf-8') as f:
                 json.dump(treatments_data, f, ensure_ascii=False, indent=2)
-            print(f"✅ Extraction completed: {pdf_output}")
+            print(f"Extraction completed: {pdf_output}")
 
         # ====== STEP 3: Classify Treatment Lines ======
         print("\n" + "="*70)
@@ -140,13 +152,13 @@ class TreatmentWizard:
             classified_data = classify_treatment_lines(treatments_data, model_desc)
 
             if not classified_data:
-                print("❌ Classification failed")
+                print("Classification failed")
                 return None
 
             classified_output.parent.mkdir(parents=True, exist_ok=True)
             with open(classified_output, 'w', encoding='utf-8') as f:
                 json.dump(classified_data, f, ensure_ascii=False, indent=2)
-            print(f"✅ Classification completed: {classified_output}")
+            print(f"Classification completed: {classified_output}")
 
         # ====== STEP 4: Extract PET Lines ======
         print("\n" + "="*70)
@@ -164,13 +176,13 @@ class TreatmentWizard:
             pet_data = extract_pet_lines(model_dir)
 
             if not pet_data:
-                print("❌ PET extraction failed")
+                print("PET extraction failed")
                 return None
 
             pet_output.parent.mkdir(parents=True, exist_ok=True)
             with open(pet_output, 'w', encoding='utf-8') as f:
                 json.dump(pet_data, f, ensure_ascii=False, indent=2)
-            print(f"✅ PET extraction completed: {pet_output}")
+            print(f"PET extraction completed: {pet_output}")
 
         # ====== STEP 5: Match Parts to Services with proper model_name normalization and filtering ======
         print("\n" + "=" * 70)
@@ -199,11 +211,11 @@ class TreatmentWizard:
             service_lines_output = model_dir / "Service_lines_with_part_number.json"
 
             if service_lines_output.exists() and not force:
-                print(f"✅ Output exists: {service_lines_output}")
-                print("⏭️  Skipping...")
+                print(f"Output exists: {service_lines_output}")
+                print("Skipping...")
                 service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
             else:
-                print("▶️  Running parts matching on single model...")
+                print("Running parts matching on single model...")
 
                 result = match_parts_to_services(
                     classified_data,
@@ -212,7 +224,7 @@ class TreatmentWizard:
                 )
 
                 if not result:
-                    print("❌ Parts matching failed")
+                    print("Parts matching failed")
                     return None
 
                 with open(service_lines_output, 'w', encoding='utf-8') as f:
@@ -221,13 +233,13 @@ class TreatmentWizard:
                 service_lines_data['A'] = result
                 model_id_map[model_desc] = 'A'
 
-            print(f"✅ Parts matching completed for single model.")
+            print(f"Parts matching completed for single model.")
         else:
-            print(f"▶️ Multiple model_names detected: {model_names}")
+            print(f"Multiple model_names detected: {model_names}")
             model_id_map = map_model_names_to_ids(model_names)
 
             for model_name, model_id in model_id_map.items():
-                print(f"▶️ Running parts matching for model '{model_name}' (ID {model_id})...")
+                print(f"Running parts matching for model '{model_name}' (ID {model_id})...")
 
                 split_classified_data = {"services": {}}
 
@@ -246,7 +258,7 @@ class TreatmentWizard:
                 result = match_parts_to_services(split_classified_data, pet_data, model_name)
 
                 if not result:
-                    print(f"❌ Parts matching failed for model {model_name}")
+                    print(f"Parts matching failed for model {model_name}")
                     continue
 
                 output_file = model_dir / "Outputs" / "Service Lines" / f"Service_lines_with_part_number_{model_id}.json"
@@ -255,7 +267,7 @@ class TreatmentWizard:
                     json.dump(result, f, ensure_ascii=False, indent=2)
 
                 service_lines_data[model_id] = result
-                print(f"✅ Parts matching completed for {model_name} saved to {output_file}")
+                print(f"Parts matching completed for {model_name} saved to {output_file}")
 
         # ====== STEP 6: Create Service Baskets for each model_id ======
         print("\n" + "="*70)
@@ -268,20 +280,20 @@ class TreatmentWizard:
             baskets_output.parent.mkdir(parents=True, exist_ok=True)
 
             if baskets_output.exists() and not force:
-                print(f"✅ Output already exists: {baskets_output}")
-                print("⏭️  Skipping...")
+                print(f"Output already exists: {baskets_output}")
+                print("Skipping...")
                 baskets_data = json.load(open(baskets_output, 'r', encoding='utf-8'))
             else:
-                print(f"▶️  Creating service baskets for model ID {model_id} ...")
+                print(f"Creating service baskets for model ID {model_id} ...")
                 baskets_data = create_service_baskets(data)
 
                 if not baskets_data:
-                    print("❌ Service basket creation failed")
+                    print("Service basket creation failed")
                     return None
 
                 with open(baskets_output, 'w', encoding='utf-8') as f:
                     json.dump(baskets_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Service baskets created: {baskets_output}")
+                print(f"Service baskets created: {baskets_output}")
 
             baskets_data_map[model_id] = baskets_data
 
@@ -296,19 +308,19 @@ class TreatmentWizard:
             hebrew_output.parent.mkdir(parents=True, exist_ok=True)
 
             if hebrew_output.exists() and not force:
-                print(f"✅ Output already exists: {hebrew_output}")
-                print("⏭️ Skipping Step 7...")
+                print(f"Output already exists: {hebrew_output}")
+                print("Skipping Step 7...")
             else:
-                print(f"▶️ Running translation to Hebrew for model ID {model_id} ...")
+                print(f"Running translation to Hebrew for model ID {model_id} ...")
                 translated_data = translate_service_data(baskets_data)
 
                 if not translated_data:
-                    print("❌ Hebrew translation failed — returning English only")
+                    print("Hebrew translation failed — returning English only")
                     translated_data = baskets_data
 
                 with open(hebrew_output, "w", encoding="utf-8") as f:
                     json.dump(translated_data, f, ensure_ascii=False, indent=2)
-                print(f"✅ Hebrew translation saved to: {hebrew_output}")
+                print(f"Hebrew translation saved to: {hebrew_output}")
 
             hebrew_outputs[model_id] = hebrew_output
 
@@ -341,16 +353,16 @@ class TreatmentWizard:
                     model_desc=model_desc_param
                 )
                 excel_paths[model_id] = excel_path
-                print(f"📊 Excel exported for model ID {model_id}: {excel_path}")
+                print(f"Excel exported for model ID {model_id}: {excel_path}")
 
             except Exception as e:
-                print(f"⚠️ Excel export failed for model ID {model_id}: {e}")
+                print(f"Excel export failed for model ID {model_id}: {e}")
                 import traceback
                 traceback.print_exc()
                 excel_paths[model_id] = None
 
         print("\n" + "="*70)
-        print("🎉 PIPELINE COMPLETED SUCCESSFULLY")
+        print("PIPELINE COMPLETED SUCCESSFULLY")
         print("="*70)
         print("JSON Hebrew outputs:")
         for k, v in hebrew_outputs.items():
@@ -380,12 +392,12 @@ def main():
     args = parser.parse_args()
 
     if len(args.vin) != 17:
-        print(f"❌ VIN must be exactly 17 characters (got {len(args.vin)})")
+        print(f"VIN must be exactly 17 characters (got {len(args.vin)})")
         sys.exit(1)
 
     base_path = Path(args.base_path)
     if not base_path.exists():
-        print(f"❌ Base path does not exist: {base_path}")
+        print(f"Base path does not exist: {base_path}")
         sys.exit(1)
 
     wizard = TreatmentWizard(args.base_path)
@@ -393,17 +405,17 @@ def main():
         result = wizard.run_pipeline(args.vin, force=args.force)
 
         if result:
-            print("\n🎉 Pipeline completed successfully!")
+            print("\nPipeline completed successfully!")
             sys.exit(0)
         else:
-            print("\n❌ Pipeline failed")
+            print("\n Pipeline failed")
             sys.exit(1)
 
     except KeyboardInterrupt:
-        print("\n⚠️ Pipeline interrupted by user")
+        print("\n️ Pipeline interrupted by user")
         sys.exit(130)
     except Exception as e:
-        print(f"❌ Pipeline error: {e}")
+        print(f" Pipeline error: {e}")
         raise
 
 
