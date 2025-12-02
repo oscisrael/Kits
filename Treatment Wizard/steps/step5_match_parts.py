@@ -643,6 +643,20 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
 
     # Rule 2: Engine oil - ALWAYS prefer HIGHEST X version
     if ('fill in' in service_lower and 'engine oil' in service_lower) or 'engine oil' in service_lower:
+        if matches and "filter" not in service_lower:
+            # מסננים תוצאות שהן פילטרים
+            valid_matches = [
+                m for m in matches
+                if "filter" not in m.get('description', '').lower()
+                   and "housing" not in m.get('description', '').lower()
+            ]
+
+            if not valid_matches:
+                print(f"  🛑 Blocked semantic match: Service asks for oil, but only filters found.")
+                return []  # מחזיר רשימה ריקה כדי להפעיל את ה-NOT FOUND
+
+            matches = valid_matches
+
         if matches:
             all_candidates = []
             for match in matches:
@@ -833,7 +847,7 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
                     "CATEGORY": category,
                     "CONFIDENCE": confidence,
                     "PART NUMBER": "NOT FOUND",
-                    "DESCRIPTION": "",
+                    "DESCRIPTION": text,
                     "REMARK": "",
                     "QUANTITY": quantity,
                     "MATCH SCORE": 0.0
