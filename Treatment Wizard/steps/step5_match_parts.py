@@ -9,7 +9,7 @@ Hybrid Approach:
 3. GPT-4o-mini explanations (for uncertain matches)
 
 Updated rules:
-1. Engine oil: Always prefer HIGHEST X version (X4 > X3 > X2)
+1. Engine oil: Matched by model code (from new config) - NO MORE X-version logic
 2. Panamera/Cayenne oil filter: Must be "with seal" (NOT "complete")
 3. Air cleaner filter: Engine air filter
 4. Particle filter: Cabin/pollen/dust filter
@@ -29,6 +29,7 @@ from openai import OpenAI
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'foundation_codes'))
 from oil_capacity_config import get_oil_capacity
+from engine_oil_part_number_config import get_oil_part_number
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -54,7 +55,6 @@ ILL_NO_CATEGORIES = {
 # ============================================================================
 # EMBEDDING CACHE CLASS
 # ============================================================================
-
 class EmbeddingCache:
     """
     Cache for PET part embeddings
@@ -70,8 +70,8 @@ class EmbeddingCache:
             try:
                 with open(self.cache_file, 'rb') as f:
                     cache = pickle.load(f)
-                print(f"📂 Loaded {len(cache)} embeddings from cache")
-                return cache
+                    print(f"📂 Loaded {len(cache)} embeddings from cache")
+                    return cache
             except Exception as e:
                 print(f"⚠️ Cache load error: {e}. Starting fresh.")
                 return {}
@@ -81,7 +81,7 @@ class EmbeddingCache:
         try:
             with open(self.cache_file, 'wb') as f:
                 pickle.dump(self.cache, f)
-            print(f"💾 Saved {len(self.cache)} embeddings to cache")
+                print(f"💾 Saved {len(self.cache)} embeddings to cache")
         except Exception as e:
             print(f"❌ Cache save error: {e}")
 
@@ -95,7 +95,6 @@ class EmbeddingCache:
 # ============================================================================
 # HYBRID MATCHER CLASS
 # ============================================================================
-
 class HybridMatcher:
     """
     Hybrid matcher combining keywords + OpenAI embeddings
@@ -149,11 +148,9 @@ class HybridMatcher:
         """
         try:
             self.stats["explanation_calls"] += 1
-
             prompt = f"""You are a Porsche parts matching expert. Explain in 1-2 sentences why this part matches the service requirement.
 
 Service Required: {service_line}
-
 Matched Part:
 - Part Number: {matched_part.get('Part Number', '')}
 - Description: {matched_part.get('Description', '')}
@@ -168,10 +165,8 @@ Provide a clear, technical explanation in English."""
                 max_tokens=100,
                 temperature=0.3
             )
-
             explanation = response.choices[0].message.content.strip()
             return explanation
-
         except Exception as e:
             print(f"❌ Explanation API error: {e}")
             return ""
@@ -191,7 +186,6 @@ Provide a clear, technical explanation in English."""
         for part in candidates:
             # Create rich text representation
             part_text = f"{part.get('Description', '')} {part.get('Remark', '')}".strip()
-
             part_embedding = self.get_embedding(part_text)
             if part_embedding:
                 similarity = self.cosine_similarity(service_embedding, part_embedding)
@@ -199,14 +193,12 @@ Provide a clear, technical explanation in English."""
 
         # Sort by similarity
         similarities.sort(key=lambda x: x[1], reverse=True)
-
         return similarities[:top_k]
 
     def hybrid_match(self, service_line: str, keyword_matches: List[Dict],
                      keyword_scores: List[float], model_name: str) -> List[Dict]:
         """
         Combine keyword matching with semantic matching
-
         Strategy:
         1. If keyword score >= 0.7: Trust keywords
         2. If keyword score < 0.5 or no match: Use semantic
@@ -216,7 +208,6 @@ Provide a clear, technical explanation in English."""
 
         # Case 1: Strong keyword match - trust it
         max_kw_score = max(keyword_scores) if keyword_scores else 0
-
         if keyword_matches and max_kw_score >= 0.7:
             self.stats["keyword_only"] += 1
             print(f"  ✅ Strong keyword match (score: {max_kw_score:.2f})")
@@ -230,9 +221,7 @@ Provide a clear, technical explanation in English."""
         if not keyword_matches or max_kw_score < 0.5:
             self.stats["semantic_used"] += 1
             print(f"  🔍 Using semantic matching (keyword score: {max_kw_score:.2f})")
-
             semantic_results = self.semantic_match(service_line, self.pet_rows, top_k=3)
-
             if semantic_results:
                 best_part, semantic_score = semantic_results[0]
 
@@ -252,11 +241,9 @@ Provide a clear, technical explanation in English."""
                     'hybrid_score': semantic_score,
                     'explanation': explanation
                 }
-
                 print(f"  🎯 Semantic: {result['description'][:50]} (score: {semantic_score:.2f})")
                 if explanation:
                     print(f"  💡 {explanation[:80]}...")
-
                 return [result]
             else:
                 return []
@@ -267,8 +254,8 @@ Provide a clear, technical explanation in English."""
 
         # Get semantic scores for keyword candidates
         semantic_results = self.semantic_match(service_line,
-                                               [kw['original_pet_row'] for kw in keyword_matches[:5]],
-                                               top_k=3)
+                                                [kw['original_pet_row'] for kw in keyword_matches[:5]],
+                                                top_k=3)
 
         # Weighted combination: 40% keywords, 60% semantic
         combined_scores = []
@@ -296,12 +283,10 @@ Provide a clear, technical explanation in English."""
             result['keyword_score'] = kw_score
             result['semantic_score'] = semantic_score
             result['explanation'] = explanation
-
             combined_scores.append(result)
 
         # Sort by hybrid score
         combined_scores.sort(key=lambda x: x['hybrid_score'], reverse=True)
-
         if combined_scores:
             best = combined_scores[0]
             print(f"  🎯 Hybrid: {best.get('description', '')[:50]}")
@@ -337,7 +322,6 @@ Provide a clear, technical explanation in English."""
         embedding_cost = self.stats['api_calls'] * 0.00002  # ~$0.02 per 1K tokens
         explanation_cost = self.stats['explanation_calls'] * 0.0015  # ~$0.15 per 100 tokens
         total_cost = embedding_cost + explanation_cost
-
         print(f"\n💰 Estimated API cost: ${total_cost:.4f}")
         print(f"   - Embeddings: ${embedding_cost:.4f}")
         print(f"   - Explanations: ${explanation_cost:.4f}")
@@ -347,7 +331,6 @@ Provide a clear, technical explanation in English."""
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
-
 def sort_services_by_interval(services: Dict) -> Dict:
     time_dependent = {}
     km_services = {}
@@ -366,19 +349,9 @@ def sort_services_by_interval(services: Dict) -> Dict:
     sorted_km_services = OrderedDict(
         sorted(km_services.items(), key=lambda x: extract_km_from_header(x[0]))
     )
-
     for key, value in time_dependent.items():
         sorted_km_services[key] = value
-
     return sorted_km_services
-
-
-def extract_x_version(description: str) -> int:
-    """Extract X version (X3, X4, X10, etc.)"""
-    match = re.search(r'x(\d+)', description.lower())
-    if match:
-        return int(match.group(1))
-    return -1
 
 
 def normalize_text(text: str) -> str:
@@ -423,10 +396,10 @@ def get_service_keywords(service_line: str) -> List[str]:
     if "rear" in service_lower and ("differential" in service_lower or "final drive" in service_lower):
         keywords.extend(["rear", "differential", "final", "drive", "75w90"])
     if ("all-wheel" in service_lower or "all wheel" in service_lower) and (
-        "final drive" in service_lower or "differential" in service_lower):
+            "final drive" in service_lower or "differential" in service_lower):
         keywords.extend(["front", "differential", "axle", "transmission", "fluid"])
     if "front" in service_lower and (
-        "differential" in service_lower or "axle" in service_lower or "final drive" in service_lower):
+            "differential" in service_lower or "axle" in service_lower or "final drive" in service_lower):
         keywords.extend(["front", "differential", "axle", "transmission", "fluid"])
     if "transfer" in service_lower and ("gear" in service_lower or "case" in service_lower or "box" in service_lower):
         keywords.extend(["transfer", "box", "gear", "oil", "transmission", "fluid"])
@@ -437,7 +410,6 @@ def get_service_keywords(service_line: str) -> List[str]:
 # ============================================================================
 # KEYWORD MATCHING (EXISTING LOGIC)
 # ============================================================================
-
 def calculate_match_score_porsche(service_line: str, pet_part: Dict) -> float:
     service_norm = normalize_text(service_line)
     part_number = pet_part.get('Part Number', '')
@@ -475,7 +447,7 @@ def calculate_match_score_porsche(service_line: str, pet_part: Dict) -> float:
     # CRITICAL RULE: Particle filter = Cabin/pollen/dust filter
     if "particle filter" in service_norm or "cabin" in service_norm or "pollen" in service_norm:
         if "cabin" in pet_norm or "pollen" in pet_norm or "dust" in pet_norm or "microfilter" in pet_norm or (
-            "odour" in pet_norm and "allergen" in pet_norm):
+                "odour" in pet_norm and "allergen" in pet_norm):
             boost += 0.6
         if "engine" in pet_norm and "air" in pet_norm and "cabin" not in pet_norm:
             penalty += 0.9
@@ -507,11 +479,11 @@ def calculate_match_score_porsche(service_line: str, pet_part: Dict) -> float:
 
     # Front differential / All-wheel final drive
     if ("front" in service_norm and (
-        "differential" in service_norm or "final" in service_norm or "axle" in service_norm)) or \
-       ("all-wheel" in service_norm or "all wheel" in service_norm) or \
-       ("4-wheel" in service_norm or "4 wheel" in service_norm):
+            "differential" in service_norm or "final" in service_norm or "axle" in service_norm)) or \
+            ("all-wheel" in service_norm or "all wheel" in service_norm) or \
+            ("4-wheel" in service_norm or "4 wheel" in service_norm):
         if ("transmission" in pet_norm and "fluid" in pet_norm) or \
-           ("front" in pet_norm and ("axle" in pet_norm or "differential" in pet_norm)):
+                ("front" in pet_norm and ("axle" in pet_norm or "differential" in pet_norm)):
             boost += 0.7
         if "ffl" in pet_norm and "front" not in pet_norm:
             penalty += 0.5
@@ -549,7 +521,7 @@ def calculate_match_score_porsche(service_line: str, pet_part: Dict) -> float:
 
 
 def best_pet_match_porsche(service_line: str, pet_rows: List[Dict], model_name: str,
-                           hybrid_matcher: Optional[HybridMatcher] = None) -> List[Dict]:
+                            hybrid_matcher: Optional[HybridMatcher] = None) -> List[Dict]:
     """
     Enhanced matching with hybrid approach
     """
@@ -563,7 +535,6 @@ def best_pet_match_porsche(service_line: str, pet_rows: List[Dict], model_name: 
         description = pet_row.get('Description', '')
         remark = pet_row.get('Remark', '')
         ill_no = pet_row.get('Ill-No.', '')
-
         score = calculate_match_score_porsche(service_line, pet_row)
 
         if score > 0.3:
@@ -583,10 +554,8 @@ def best_pet_match_porsche(service_line: str, pet_rows: List[Dict], model_name: 
     if hybrid_matcher:
         keyword_matches = scored_parts[:5]
         keyword_scores = [p['score'] for p in keyword_matches]
-
         hybrid_results = hybrid_matcher.hybrid_match(service_line, keyword_matches,
-                                                     keyword_scores, model_name)
-
+                                                      keyword_scores, model_name)
         if hybrid_results:
             best_match = hybrid_results[0]
             print(f"  ✅ Matched: {best_match['part_number']} ({best_match.get('match_method', 'keyword')})")
@@ -605,8 +574,16 @@ def best_pet_match_porsche(service_line: str, pet_rows: List[Dict], model_name: 
 # ============================================================================
 # SPECIAL RULES
 # ============================================================================
+def apply_special_rules(service_line: str, model_name: str, model_code: str, matches: List[Dict]) -> List[Dict]:
+    """
+    Apply special matching rules
 
-def apply_special_rules(service_line: str, model_name: str, matches: List[Dict]) -> List[Dict]:
+    Args:
+        service_line: The service line text
+        model_name: Model description (e.g., "Panamera GTS")
+        model_code: Model code from VIN (e.g., "97ABE1")
+        matches: Current matches from keyword/hybrid matching
+    """
     service_lower = service_line.lower()
     model_lower = model_name.lower()
     is_panamera = 'panamera' in model_lower
@@ -641,36 +618,37 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
         else:
             return matches
 
-    # Rule 2: Engine oil - ALWAYS prefer HIGHEST X version
+    # Rule 2: Engine oil - USE MODEL CODE MAPPING (NOT PET X-VERSION)
     if ('fill in' in service_lower and 'engine oil' in service_lower) or 'engine oil' in service_lower:
-        if matches and "filter" not in service_lower:
-            # מסננים תוצאות שהן פילטרים
-            valid_matches = [
-                m for m in matches
-                if "filter" not in m.get('description', '').lower()
-                   and "housing" not in m.get('description', '').lower()
-            ]
+        if "filter" not in service_lower:
+            # Get oil part number from model code
+            oil_part_num = get_oil_part_number(model_code) if model_code else None
 
-            if not valid_matches:
-                print(f"  🛑 Blocked semantic match: Service asks for oil, but only filters found.")
-                return []  # מחזיר רשימה ריקה כדי להפעיל את ה-NOT FOUND
-
-            matches = valid_matches
-
-        if matches:
-            all_candidates = []
-            for match in matches:
-                desc = match.get('description', '')
-                x_ver = extract_x_version(desc)
-                all_candidates.append((x_ver, match))
-
-            x_versions = [(x, m) for x, m in all_candidates if x > 0]
-
-            if x_versions:
-                x_versions.sort(key=lambda x: x[0], reverse=True)
-                highest_x = x_versions[0][1]
-                print(f"  🔝 Selected HIGHEST X version: X{x_versions[0][0]}")
-                return [highest_x]
+            if oil_part_num:
+                # Direct match by part number - bypass PET matching completely
+                print(f"  🛢️ Engine oil: Using model code mapping → {oil_part_num}")
+                return [{
+                    'part_number': oil_part_num,
+                    'description': f'Engine oil - {oil_part_num}',
+                    'remark': 'שמן מנוע',
+                    'ill_no': '104',
+                    'QUANTITY': '1',  # Will be overridden by oil_capacity later
+                    'score': 1.0,
+                    'match_method': 'model_code_direct',
+                    'explanation': f'Matched by model code {model_code}'
+                }]
+            else:
+                print(f"  ⚠️ No oil part number mapping for model code: {model_code}")
+                # Fallback: filter out non-oil matches from PET results
+                valid_matches = [
+                    m for m in matches
+                    if "filter" not in m.get('description', '').lower()
+                    and "housing" not in m.get('description', '').lower()
+                ]
+                if not valid_matches:
+                    print(f"  🛑 Blocked: Service asks for oil, but only filters found in PET.")
+                    return []
+                return valid_matches
 
     # Rule 3: Air cleaner - replace filter element
     if "air cleaner" in service_lower and "replace filter element" in service_lower:
@@ -685,28 +663,26 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
         for match in matches:
             desc_lower = match.get('description', '').lower()
             if (("odour" in desc_lower and "allergen" in desc_lower and "filter" in desc_lower) or
-                ("odour and allergen filter" in desc_lower)):
+                    ("odour and allergen filter" in desc_lower)):
                 print(f"  🧼 Matched odour and allergen filter")
                 return [match]
 
-    # כלל חדש: PDK transmission oil – always use 9 liters for Panamera
+    # Rule 5: PDK transmission oil – always use 9 liters for Panamera
     if "pdk" in service_lower and "change oil" in service_lower:
         for match in matches:
             desc_lower = match.get('description', '').lower()
-            remark_lower = match.get('remark', '').lower()  # קריאה גם ל-REMARK
-            print(f"match \n {match}")
-            # בדיקה: נוזל גיר בתיאור, ו-FFL בתיאור או בהערה
+            remark_lower = match.get('remark', '').lower()
+
             if "transmission fluid" in desc_lower and ("ffl" in desc_lower or "ffl" in remark_lower):
-                print(f"entered if. desc_lower {desc_lower}")
-                print(f"return - \n service line {service_line}, \n part number {match.get('part_number', '').strip()},\n description |{match.get('description', '').strip()}")
+                print(f"  🔧 PDK oil: Forcing 9L quantity")
                 return [{
                     "SERVICE LINE": service_line,
                     "part_number": match.get("part_number", "").strip(),
                     "DESCRIPTION": match.get("description", "").strip(),
                     "REMARK": match.get("remark", "").strip(),
-                    "QUANTITY": "9",  # הכמות הקבועה
-                    "MATCH SCORE": match.get('score', 1.0),  # שמירה על ציון
-                    "MATCH METHOD": "special_rule_pdk"  # לצורך דיבאג
+                    "QUANTITY": "9",  # Fixed quantity
+                    "MATCH SCORE": match.get('score', 1.0),
+                    "MATCH METHOD": "special_rule_pdk"
                 }]
 
     return matches[:1] if matches else []
@@ -715,11 +691,18 @@ def apply_special_rules(service_line: str, model_name: str, matches: List[Dict])
 # ============================================================================
 # MAIN MATCHING PIPELINE
 # ============================================================================
-
 def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
-                           model_description: str, use_hybrid: bool = True) -> Optional[Dict]:
+                             model_description: str, model_code: str = None,
+                             use_hybrid: bool = True) -> Optional[Dict]:
     """
     Main matching pipeline with optional hybrid mode
+
+    Args:
+        classified_data: Classified service data
+        pet_data: PET parts database
+        model_description: Model description (e.g., "Panamera GTS")
+        model_code: Model code from VIN (e.g., "97ABE1") - NEW PARAMETER
+        use_hybrid: Whether to use hybrid (keyword + AI) matching
     """
     if not classified_data or "services" not in classified_data:
         print("❌ Invalid classified data")
@@ -731,6 +714,8 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
 
     print(f"🔧 Matching parts with {'Hybrid (Keywords + OpenAI)' if use_hybrid else 'Keywords only'}")
     print(f"Model: {model_description}")
+    if model_code:
+        print(f"Model Code: {model_code}")
     print(f"PET parts: {len(pet_data)}")
 
     oil_capacity = get_oil_capacity(model_description)
@@ -761,6 +746,7 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
         model_name = model_description
         service_output = {
             "model": model_name,
+            "model_code": model_code,
             "oil_capacity": oil_capacity,
             "matched_parts": []
         }
@@ -777,48 +763,38 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
 
             # Match with hybrid or keyword only
             matches = best_pet_match_porsche(text, pet_data, model_name, hybrid_matcher)
-            matches = apply_special_rules(text, model_name, matches)
+            matches = apply_special_rules(text, model_name, model_code, matches)
 
             quantity = "1"
-
-
             if "engine oil" in text.lower() or "fill in" in text.lower():
                 if oil_capacity:
                     quantity = str(oil_capacity)
 
-
-
             if matches:
                 for match in matches:
                     desc_lower = match.get('description', '').lower()
+
                     if "brake fluid" in desc_lower:
                         match['quantity'] = '3'
                         match['QUANTITY'] = '3'
 
-
                     is_addon = match.get('is_addon', False)
                     service_line_text = f"{text} ({match.get('remark', '')})" if is_addon else text
 
-                    # --- Lógica מתוקנת לחישוב כמות ---
-                    # 1. בדיקה אם הכלל המיוחד כבר קבע כמות (כמו ב-PDK שקבענו 9)
+                    # Calculate final quantity
                     special_rule_qty = match.get('QUANTITY') or match.get('quantity')
                     final_qty = "1"
 
                     if special_rule_qty and special_rule_qty != "1":
-                        # אם הכלל המיוחד החזיר כמות ספציפית (למשל 9) - נשתמש בה
+                        # Special rule set a specific quantity (e.g., PDK = 9)
                         final_qty = special_rule_qty
-
                     elif "engine oil" in text.lower() or "fill in" in text.lower():
-                        # אם זה שמן מנוע - נשתמש בקיבולת המחושבת
+                        # Engine oil - use calculated capacity
                         final_qty = str(oil_capacity) if oil_capacity else "1"
-
                     else:
-                        # אחרת, ברירת מחדל 1
+                        # Default to 1
                         final_qty = "1"
 
-                    # -------------------------------------
-                    print(f"matchmatchnatch{match}")
-                    print(f"FFFFFmatch{match.get('part_number', 'NOT FOUND')}")
                     part_data = {
                         "SERVICE LINE": service_line_text,
                         "CATEGORY": category,
@@ -826,14 +802,13 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
                         "PART NUMBER": match.get('part_number', 'NOT FOUND'),
                         "DESCRIPTION": match.get('description', ''),
                         "REMARK": match.get('remark', ''),
-                        "QUANTITY": final_qty,  # שימוש במשתנה המחושב החדש
+                        "QUANTITY": final_qty,
                         "MATCH SCORE": round(match.get('hybrid_score', match.get('score', 0)), 3)
                     }
 
                     # Add explanation if available
                     if match.get('explanation'):
                         part_data["EXPLANATION"] = match['explanation']
-
                     if match.get('match_method'):
                         part_data["MATCH METHOD"] = match['match_method']
 
@@ -876,7 +851,6 @@ def match_parts_to_services(classified_data: Dict, pet_data: List[Dict],
 # ============================================================================
 # TEST
 # ============================================================================
-
 def _test():
     print("="*70)
     print("Testing Step 5: Hybrid Matching (Keywords + OpenAI)")
@@ -887,12 +861,11 @@ def _test():
     print("  2. OpenAI Embeddings (semantic, cached)")
     print("  3. GPT-4o-mini explanations (for uncertain matches)")
     print("\nUpdated rules:")
-    print("  1. Engine oil: HIGHEST X version preferred")
+    print("  1. Engine oil: Matched by MODEL CODE (no more X-version)")
     print("  2. Panamera/Cayenne oil filter: Must be 'with seal'")
     print("  3. Air cleaner: Engine air filter")
     print("  4. Particle filter: Cabin/pollen/dust filter")
     print("  5. Transfer gear: Transfer box gear oil")
-
 
 if __name__ == "__main__":
     _test()

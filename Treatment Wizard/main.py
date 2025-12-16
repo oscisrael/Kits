@@ -211,20 +211,21 @@ class TreatmentWizard:
             service_lines_output = model_dir / "Service_lines_with_part_number.json"
 
             if service_lines_output.exists() and not force:
-                print(f"Output exists: {service_lines_output}")
-                print("Skipping...")
+                print(f"✅ Output exists: {service_lines_output}")
+                print("⏭️ Skipping...")
                 service_lines_data = json.load(open(service_lines_output, 'r', encoding='utf-8'))
             else:
-                print("Running parts matching on single model...")
-
+                print("▶️ Running parts matching on single model...")
                 result = match_parts_to_services(
                     classified_data,
                     pet_data,
-                    model_desc
+                    model_desc,
+                    model_code=model_code,  # ← הוספה חשובה!
+                    use_hybrid=True
                 )
 
                 if not result:
-                    print("Parts matching failed")
+                    print("❌ Parts matching failed")
                     return None
 
                 with open(service_lines_output, 'w', encoding='utf-8') as f:
@@ -232,17 +233,15 @@ class TreatmentWizard:
 
                 service_lines_data['A'] = result
                 model_id_map[model_desc] = 'A'
-
-            print(f"Parts matching completed for single model.")
+                print(f"✅ Parts matching completed for single model.")
         else:
-            print(f"Multiple model_names detected: {model_names}")
+            print(f"🔄 Multiple model_names detected: {model_names}")
             model_id_map = map_model_names_to_ids(model_names)
 
             for model_name, model_id in model_id_map.items():
-                print(f"Running parts matching for model '{model_name}' (ID {model_id})...")
+                print(f"▶️ Running parts matching for model '{model_name}' (ID {model_id})...")
 
                 split_classified_data = {"services": {}}
-
                 for service_key, service_data in classified_data.get("services", {}).items():
                     items = service_data.get("items", [])
                     if isinstance(items, list):
@@ -255,19 +254,26 @@ class TreatmentWizard:
                                 "items": filtered_items
                             }
 
-                result = match_parts_to_services(split_classified_data, pet_data, model_name)
+                result = match_parts_to_services(
+                    split_classified_data,
+                    pet_data,
+                    model_name,
+                    model_code=model_code,  # ← הוספה חשובה!
+                    use_hybrid=True
+                )
 
                 if not result:
-                    print(f"Parts matching failed for model {model_name}")
+                    print(f"❌ Parts matching failed for model {model_name}")
                     continue
 
                 output_file = model_dir / "Outputs" / "Service Lines" / f"Service_lines_with_part_number_{model_id}.json"
                 output_file.parent.mkdir(parents=True, exist_ok=True)
+
                 with open(output_file, 'w', encoding='utf-8') as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
 
                 service_lines_data[model_id] = result
-                print(f"Parts matching completed for {model_name} saved to {output_file}")
+                print(f"✅ Parts matching completed for {model_name} → {output_file}")
 
         # ====== STEP 6: Create Service Baskets for each model_id ======
         print("\n" + "="*70)
